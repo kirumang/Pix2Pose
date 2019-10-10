@@ -73,7 +73,7 @@ python3 5_evaluation_bop_basic.py <gpu_id> <path_cfg_json> <dataset_name>
 - For real-time estimation, run realtime.py with proper config setup
 
 
-#### [WIP] ROS interface (tested with ROS-Kinetic)
+#### ROS interface (tested with ROS-Kinetic)
 - To Run the ROS interface with our Python 3.5 code (since ROS-Kinectic uses python 2.7), we need a trick to run ROS node.
 ```
 export PYTHONPATH=/usr/local/lib/python3.5/dist-packages:$PYTHONPATH(including other ROS related pathes)
@@ -151,10 +151,7 @@ keras_retinanet/bin/convert_model.py /path/to/training/model.h5 /path/to/save/in
 
 ### Download pre-trained weights 
 * Please refer to the paper for other details regarding the training
-  
-  * LineMOD: 2D R-CNN weight + Pix2Pose weights [link](https://drive.google.com/open?id=1XjGpniXgoxzGWxq4sul1FvszUoLROkke) 
-    * Image IDs for training splits are listed in the folder, "linemod_splits", which was copied from [here](https://github.com/microsoft/singleshotpose)
-  
+    
   * T-Less: 2D Retinanet weights + Pix2Pose weights [link](https://drive.google.com/open?id=1XjGpniXgoxzGWxq4sul1FvszUoLROkke) 
     * Given real training images are used for training (primesense)
     * reconstructed models are used to calculate VSD scores.
@@ -177,11 +174,11 @@ e.g., for hb, the extracted files should placed in
   *[Note] Networks are trained using synthetic images to follow the rule of the challenge, which is a totally different condition that we assumed in our paper. In the paper, we used only real images in the LineMOD dataset for trainng.
 
 * T-Less: 2D Mask R-CNN Detection + Pix2Pose weights 
-* ITODD: 2D Mask R-CNN Detection + Pix2Pose weights: [link](http://kirumang.github.io)
-* HB: 2D Mask R-CNN Detection + Pix2Pose weights: [link](http://kirumang.github.io)
-* YCBV: 2D Mask R-CNN Detection + Pix2Pose weights: [link](http://kirumang.github.io)
-* ICBIN: 2D Mask R-CNN Detection + Pix2Pose weights: [link](http://kirumang.github.io)
-* TUDL: 2D Mask R-CNN Detection + Pix2Pose weights: [link](http://kirumang.github.io)
+* ITODD: 2D Mask R-CNN Detection + Pix2Pose weight
+* HB: 2D Mask R-CNN Detection + Pix2Pose weights
+* YCBV: 2D Mask R-CNN Detection + Pix2Pose weights
+* ICBIN: 2D Mask R-CNN Detection + Pix2Pose weights
+* TUDL: 2D Mask R-CNN Detection + Pix2Pose weights
 
 
 ### Contributors:
