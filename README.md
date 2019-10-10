@@ -76,7 +76,7 @@ python3 5_evaluation_bop_basic.py <gpu_id> <path_cfg_json> <dataset_name>
 export PYTHONPATH=/usr/local/lib/python3.5/dist-packages:$PYTHONPATH(including other ROS related pathes)
 ```
 - Thus, libraries will be loaded from python3.5 path, while loading ros related packages (rospy) from ros library directories in python 2.7.
-- You have to specify the topic for RGB images + camera instrinsics in "ros_config.json" file. For more detail, please check out [ros_api_manual](http://github/kirumang/Pix2Pose/ros_kinetic/ros_api.manual.md)
+- You have to specify the topic for RGB images + camera instrinsics in "ros_config.json" file. For more detail, please check out [ros_api_manual](ros_kinetic/ros_api.manual.md)
 - 
 - [WIP] Depth ICP when depth image topic is available. 
 - Current ros_config.json is to detect and estimate pose of YCB-Video objects. download trained weights of YCB-V dataset to run this example. 
