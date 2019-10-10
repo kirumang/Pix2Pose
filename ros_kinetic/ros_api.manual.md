@@ -13,3 +13,7 @@ List of parameters for running Pix2Pose with ROS
 * rgb_topic: ros topic for color images
 * depth_topic: ros topic for depth images
 * cam_K, im_height, im_width: camera information (precise cam_K is important to obtain accurate results)
+
+The results will be published in topics, /pix2pose/detected_object and /pix2pose/object_pose, which are visualization of detection results and pose estimation results.
+![Sample image](example_imgs/sample_mustard_bottle.jpg)
+
