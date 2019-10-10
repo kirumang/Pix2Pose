@@ -70,15 +70,16 @@ python3 5_evaluation_bop_basic.py <gpu_id> <path_cfg_json> <dataset_name>
 
 
 #### ROS interface (tested with ROS-Kinetic)
+- Install ros_numpy: ```pip3 install ros_numpy```
 - To Run the ROS interface with our Python 3.5 code (since ROS-Kinectic uses python 2.7), we need a trick to run ROS node.
 ```
 export PYTHONPATH=/usr/local/lib/python3.5/dist-packages:$PYTHONPATH(including other ROS related pathes)
 ```
-- Install ros_numpy: ```pip3 install ros_numpy```
-- So the most of library will be loaded from python3.5 path, while loading ros related packages (rospy) from python 2.7.
-
-- You have to specify the topic for RGB images + camera instrinsics in "ros_config.json" file. You can enable the depth ICP when depth image topic is available. Simple ICP using a fuction in OpenCV is used.
-
+- Thus, libraries will be loaded from python3.5 path, while loading ros related packages (rospy) from ros library directories in python 2.7.
+- You have to specify the topic for RGB images + camera instrinsics in "ros_config.json" file. For more detail, please check out [ros_api_manual](http://github/kirumang/Pix2Pose/ros_kinetic/ros_api.manual.md)
+- 
+- [WIP] Depth ICP when depth image topic is available. 
+- Current ros_config.json is to detect and estimate pose of YCB-Video objects. download trained weights of YCB-V dataset to run this example. 
 ---
 
 ### Training for a new dataset
