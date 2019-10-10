@@ -1,0 +1,23 @@
+{
+    "detection_pipeline": "rcnn",
+    "path_to_detection_pipeline": "/home/kiru/common_ws/Mask_RCNN_Mod/" ,  
+    "path_to_detection_weights": "/home/kiru/media/hdd/bop/ycbv/weight_detection/ycbv20190925T1746/mask_rcnn_ycbv_0005.h5" ,
+    "path_to_pix2pose_weights": "/home/kiru/media/hdd/bop/ycbv/pix2pose_weights" ,    
+    "inlier_th":0.15,
+    "ransac_th":5,
+    "outlier_th":[0.1,0.2,0.3,0.4],
+    "norm_factor_fn":"/home/kiru/media/hdd/bop/ycbv/models_xyz/norm_factor.json",
+    "n_objs":21,
+    "obj_labels":[1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21],
+    "target_obj_name":[2,5,12],
+    "icp":1,
+    "model_dir":"/home/kiru/media/hdd/bop/ycbv/models",
+    "ply_files":["obj_000002.ply","obj_000005.ply","obj_000012.ply"],
+    "model_scale":0.001,
+    "rgb_topic":"/hsrb/head_rgbd_sensor/rgb/image_rect_color",
+    "depth_topic":"/hsrb/head_rgbd_sensor/depth_registered/image_rect_raw",
+    "cam_K":[538.391033533567, 0.0, 315.3074696331638, 0.0, 538.085452058436, 233.0483557773859, 0.0, 0.0, 1.0],
+    "im_height":480,
+    "im_width":640
+  }
+  

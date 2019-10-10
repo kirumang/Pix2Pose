@@ -69,10 +69,6 @@ python3 5_evaluation_bop_basic.py <gpu_id> <path_cfg_json> <dataset_name>
 **Important Note** Differ from the paper, we used multiple outlier thresholds in the second stage for the BOP challenge since it is not allowed to have different parameters for each object or each dataset. This can be done easily by set the "outlier_th" in a 1D-array (refer to cfg_bop2019.json). In this setup, the best result, which has the largest inlier points, will be derived during estimation after applying all values in the second stage. To reproduce the results in the paper with fixed outlier threshold values, a 2D-array should be given as in "cfg_linemode_paper.json" or "cfg_tless_paper.json")
 
 
-#### [WIP] Real-time estimation (using a normal webcam)
-- For real-time estimation, run realtime.py with proper config setup
-
-
 #### ROS interface (tested with ROS-Kinetic)
 - To Run the ROS interface with our Python 3.5 code (since ROS-Kinectic uses python 2.7), we need a trick to run ROS node.
 ```
@@ -169,7 +165,7 @@ e.g., for hb, the extracted files should placed in
 - [path to bop dataset]/hb/weight_detection/hb20190927T0827/mask_rcnn_hb_0005.h5
 - [path to bop dataset]/hb/pix2pose_weights/[obj_no]
 
-* LMO: 2D Mask R-CNN Detection + Pix2Pose weights: [link](http://kirumang.github.io)
+* LMO: 2D Mask R-CNN Detection + Pix2Pose weights
  
   *[Note] Networks are trained using synthetic images to follow the rule of the challenge, which is a totally different condition that we assumed in our paper. In the paper, we used only real images in the LineMOD dataset for trainng.
 

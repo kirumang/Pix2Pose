@@ -1,0 +1,14 @@
+{
+  "dataset_dir": "/home/kiru/media/hdd/bop/",
+  "dataset_names": ["tless"],
+  "detection_pipeline": "retinanet",
+  "path_to_detection_pipeline": "/home/kiru/common_ws/src/keras-retinanet/",
+  "detection_weight":"resnet50_tless_19_inf.h5",
+  "score_type":1,
+  "task_type":1,
+  "cand_factor":0,
+  "norm_factor_fn":"norm_factor_old.json",
+  "path_to_output": "/home/kiru/media/hdd/bop_result", 
+  "outlier_th":[[0.1],[0.1],[0.1],[0.3],[0.2],[0.3],[0.3],[0.3],[0.3],[0.2],[0.3],[0.3],[0.2],[0.2],[0.2],[0.3],[0.3],[0.2],[0.3],[0.3],[0.2],[0.2],[0.3],[0.1],[0.3],[0.3],[0.3],[0.3],[0.3],[0.3]],
+  "test_target":"all"
+}
