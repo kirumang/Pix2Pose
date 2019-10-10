@@ -51,9 +51,9 @@ The original codes are updated to support the format of the most recent 6D pose 
 3. Set config file
    1. Set directories properly based on your environment
    2. For the bop challenge dataset: <path_to_src>/cfg/cfg_bop2019.json      
-   3. Use trained weights for the paper: <path_to_src>/cfg/cfg_<dataset_name>_paper.json (e.g., cfg_linemod_paper.json)
+   3. Use trained weights for the paper: <path_to_src>/cfg/cfg_<dataset_name>_paper.json (e.g., cfg_tless_paper.json)
    4. score_type: 1-scores from a 2D detetion pipeline is used (used for the paper), 2-scores are caluclated using detection score+overlapped mask (only supported for Mask RCNN, used for the BOP challenge)
-   5. task_type : 1 - SiSo task (LineMOD, T-Less in the paper, 2017 BOP Challenge), 2 - ViVo task (2019 BOP challenge format)  
+   5. task_type : 1 - SiSo task (2017 BOP Challenge), 2 - ViVo task (2019 BOP challenge format)  
    6. cand_factor: a factor for the number of detection candidates 
 4. Execute the script
 ```
@@ -62,7 +62,7 @@ python3 5_evaluation_bop_basic.py <gpu_id> <path_cfg_json> <dataset_name>
 
 5. The output will be stored in the 'path_to_output' in csv format, which can be used to calculate metric using [bop_toolkit](https://github.com/thodan/bop_toolkit).
 
-**Important Note** Differ from the paper, we used multiple outlier thresholds in the second stage for the BOP challenge since it is not allowed to have different parameters for each object or each dataset. This can be done easily by set the "outlier_th" in a 1D-array (refer to cfg_bop2019.json). In this setup, the best result, which has the largest inlier points, will be derived during estimation after applying all values in the second stage. To reproduce the results in the paper with fixed outlier threshold values, a 2D-array should be given as in "cfg_linemode_paper.json" or "cfg_tless_paper.json")
+**Important Note** Differ from the paper, we used multiple outlier thresholds in the second stage for the BOP challenge since it is not allowed to have different parameters for each object or each dataset. This can be done easily by set the "outlier_th" in a 1D-array (refer to cfg_bop2019.json). In this setup, the best result, which has the largest inlier points, will be derived during estimation after applying all values in the second stage. To reproduce the results in the paper with fixed outlier threshold values, a 2D-array should be given as in "cfg_tless_paper.json")
 
 
 #### ROS interface (tested with ROS-Kinetic)
@@ -74,7 +74,7 @@ export PYTHONPATH=/usr/local/lib/python3.5/dist-packages:$PYTHONPATH(including o
 - Thus, libraries will be loaded from python3.5 path, while loading ros related packages (rospy) from ros library directories in python 2.7.
 - You have to specify the topic for RGB images + camera instrinsics in "ros_config.json" file. For more detail, please check out [ros_api_manual](ros_kinetic/ros_api.manual.md)
 - [WIP] Depth ICP when depth image topic is available. 
-- Current ros_config.json is to detect and estimate pose of YCB-Video objects. download trained weights of YCB-V dataset to run this example. 
+- Current ros_config.json is to detect and estimate pose of YCB-Video objects. Download trained weights of YCB-V dataset to run this example. 
 ---
 
 ### Training for a new dataset
