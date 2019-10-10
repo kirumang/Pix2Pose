@@ -118,7 +118,7 @@ Output files
 - Generated images will be saved in "<path_to_dataset>/<dataset_name>/train_detect/"
 
 ##### (2) Train Mask-RCNN or Keras-Retinanet
-To train Mask-RCNN, the pre-trained weight for the MS-COCO dataset should be place in <path/to/Mask-RCNN>/mask_rcnn_coco.h5. 
+To train Mask-RCNN, the pre-trained weight for the MS-COCO dataset should be place in <path/to/Mask-RCNN>/mask_rcnn_coco.h5.
 ```
 python 1_2_train_maskrcnn.py <dataset_name>
 ```
@@ -147,6 +147,7 @@ keras_retinanet/bin/convert_model.py /path/to/training/model.h5 /path/to/save/in
   * T-Less: 2D Retinanet weights + Pix2Pose weights [link](https://drive.google.com/open?id=1XjGpniXgoxzGWxq4sul1FvszUoLROkke) 
     * Given real training images are used for training (primesense)
     * reconstructed models are used to calculate VSD scores.
+    * To test using all test images, download and copy [all_target_tless.json](https://drive.google.com/open?id=1O6dKfWoe0ERlXm6Gg_3XvdxWo4a2BWVY) file into the dataset folder (together with the test_targets_bop19.json file) 
 ---
 
 ### Download: trained weights for the BOP challenge 2019
@@ -168,7 +169,7 @@ e.g., for hb, the extracted files should placed in
 * T-Less: 2D Mask R-CNN Detection + Pix2Pose weights 
 * ITODD: 2D Mask R-CNN Detection + Pix2Pose weight
 * HB: 2D Mask R-CNN Detection + Pix2Pose weights
-* YCBV: 2D Mask R-CNN Detection + Pix2Pose weights
+* YCBV: 2D Mask R-CNN Detection + Pix2Pose weights 
 * ICBIN: 2D Mask R-CNN Detection + Pix2Pose weights
 * TUDL: 2D Mask R-CNN Detection + Pix2Pose weights
 
