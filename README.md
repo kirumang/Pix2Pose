@@ -20,10 +20,6 @@ git clone https://github.com/matterport/Mask_RCNN.git
 git clone https://github.com/fizyr/keras-retinanet.git
 ```
 
-
-- [ ] Addtional requirements have to be checked in a new docker environment
-
-
 ---
 ### Citation
 If you use this code, please cite the following
@@ -77,7 +73,6 @@ export PYTHONPATH=/usr/local/lib/python3.5/dist-packages:$PYTHONPATH(including o
 ```
 - Thus, libraries will be loaded from python3.5 path, while loading ros related packages (rospy) from ros library directories in python 2.7.
 - You have to specify the topic for RGB images + camera instrinsics in "ros_config.json" file. For more detail, please check out [ros_api_manual](ros_kinetic/ros_api.manual.md)
-- 
 - [WIP] Depth ICP when depth image topic is available. 
 - Current ros_config.json is to detect and estimate pose of YCB-Video objects. download trained weights of YCB-V dataset to run this example. 
 ---
