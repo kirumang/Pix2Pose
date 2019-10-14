@@ -1,0 +1,10 @@
+
+\.ipynb_checkpoints/
+
+pix2pose_model/__pycache__/
+
+pix2pose_util/__pycache__/
+
+rendering/__pycache__/
+
+tools/__pycache__/
