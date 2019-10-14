@@ -90,10 +90,10 @@ for m_id,model_ply in enumerate(model_plys):
     m_info = model_info['{}'.format(model_id)]
     keys = m_info.keys()
     sym_continous = [0,0,0,0,0,0]
-    center_x = center_y = center_z = True
-    if('symmetries_discrete' in keys):
-        center_x = center_y = center_z = False
-        print("keep origins of the object when it has symmetric poses")
+    center_x = center_y = center_z = True    
+    #if('symmetries_discrete' in keys): #use this when objects are centered already
+    #    center_x = center_y = center_z = False
+    #    print("keep origins of the object when it has symmetric poses")    
     fn_read = model_ply
     fname = model_ply.split("/")[-1]
     obj_id = int(fname[4:-4])

@@ -46,15 +46,15 @@ class BopInferenceConfig(Config):
     RPN_ANCHOR_SCALES = (16, 32, 64, 128, 256)  # anchor side in pixels
     TRAIN_ROIS_PER_IMAGE = 1    
     VALIDATION_STEPS = 5
-    DETECTION_MIN_CONFIDENCE=0.00001
+    DETECTION_MIN_CONFIDENCE=0.001
     DETECTION_MAX_INSTANCES=100
     DETECTION_NMS_THRESHOLD=0.7
 
     def __init__(self, dataset,num_classes,im_width,im_height):
         self.NAME = dataset
         self.NUM_CLASSES = num_classes
-        self.IMAGE_MAX_DIM =min(max(im_width,im_height),1024)
-        self.IMAGE_MIN_DIM =max(min(im_width,im_height),480)
+        self.IMAGE_MAX_DIM =max(im_width,im_height)
+        self.IMAGE_MIN_DIM =min(im_width,im_height)
         if(self.IMAGE_MAX_DIM%64>0):
             frac = int(self.IMAGE_MAX_DIM/64)+1
             self.IMAGE_MAX_DIM = frac*64 #set image to the nearest size that            

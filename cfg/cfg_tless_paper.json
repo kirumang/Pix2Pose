@@ -10,5 +10,6 @@
   "norm_factor_fn":"norm_factor_old.json",
   "path_to_output": "/home/kiru/media/hdd/bop_result", 
   "outlier_th":[[0.1],[0.1],[0.1],[0.3],[0.2],[0.3],[0.3],[0.3],[0.3],[0.2],[0.3],[0.3],[0.2],[0.2],[0.2],[0.3],[0.3],[0.2],[0.3],[0.3],[0.2],[0.2],[0.3],[0.1],[0.3],[0.3],[0.3],[0.3],[0.3],[0.3]],
+  "inlier_th":0.1,
   "test_target":"all_target_tless"
 }

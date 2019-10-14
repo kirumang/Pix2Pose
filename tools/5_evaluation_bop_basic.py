@@ -127,6 +127,12 @@ im_width,im_height =cam_param_global['im_size']
 cam_K = cam_param_global['K']
 model_params =inout.load_json(os.path.join(bop_dir+"/models_xyz/",cfg['norm_factor_fn']))
 
+if(dataset=='itodd'):
+    img_type='gray'
+else:
+    img_type='rgb'
+    
+
 if("target_obj" in cfg.keys()):
     target_obj = cfg['target_obj']
     remove_obj_id=[]
@@ -159,7 +165,7 @@ if(type(th_outlier[0])==list):
     print("Individual outlier thresholds are applied for each object")
     dynamic_th=False
     th_outliers = np.squeeze(np.array(th_outlier))
-th_inlier=0.1
+th_inlier=cfg['inlier_th']
 th_ransac=3
 
 dummy_run=True
@@ -241,9 +247,19 @@ for scene_id,im_id,obj_id_targets,inst_counts in target_list:
     cam_param = cam_info[im_id]
     cam_K = cam_param['cam_K']
     depth_scale = cam_param['depth_scale'] #depth/1000 * depth_scale
+    
+    if(img_type=='gray'):
+        rgb_path = test_dir+"/{:06d}/".format(scene_id)+img_type+\
+                        "/{:06d}.tif".format(im_id)
+        image_gray = inout.load_im(rgb_path)
+        #copy gray values to three channels    
+        image_t = np.zeros((image_gray.shape[0],image_gray.shape[1],3),dtype=np.uint8)
+        image_t[:,:,:]= np.expand_dims(image_gray,axis=2)
+    else:
+        rgb_path = test_dir+"/{:06d}/".format(scene_id)+img_type+\
+                        "/{:06d}.png".format(im_id)
+        image_t = inout.load_im(rgb_path)            
 
-    rgb_path = test_dir+"/{:06d}/rgb/{:06d}.png".format(scene_id,im_id)
-    image_t = inout.load_im(rgb_path)
     t1=time.time()
     inst_count_est=np.zeros((len(inst_counts)))
     inst_count_pred = np.zeros((len(inst_counts)))
@@ -286,7 +302,7 @@ for scene_id,im_id,obj_id_targets,inst_counts in target_list:
                 mask_iou=0
             else:
                 mask_iou = np.sum(np.logical_and(mask_from_detect,mask_pred))/union
-            score=scores[r_id]*frac_inlier/np.sum(mask_pred)*mask_iou        
+            score=scores[r_id]*frac_inlier*mask_iou*union
         else:
             score = scores[r_id]        
         #inst_count_pred[obj_gt_no]+=1
