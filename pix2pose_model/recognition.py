@@ -121,7 +121,7 @@ class pix2pose():
         decode,prob = self.generator_train.predict( np.array(input_refined))
         max_inlier=-1
         for cand_id in range(len(input_refined)):
-            v1_ori,v2_ori,u1_ori,u2_ori,v1,v2,u1,u2,vv1,vnv2,uu1,uu2=box_refined[cand_id]
+            v1_ori,v2_ori,u1_ori,u2_ori,v1,v2,u1,u2,vv1,vv2,uu1,uu2=box_refined[cand_id]
             img_prob_ori = resize(prob[cand_id,:,:,0],(v2_ori-v1_ori,u2_ori-u1_ori),order=1,mode='constant',cval=1)
             img_prob_ori = img_prob_ori[vv1:vv2,uu1:uu2]
 
