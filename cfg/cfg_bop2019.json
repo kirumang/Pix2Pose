@@ -4,7 +4,7 @@
   "detection_pipeline": "rcnn",
   "path_to_detection_pipeline": "/home/kiru/common_ws/Mask_RCNN_Mod/" ,  
   "path_to_output": "/home/kiru/media/hdd/bop_result" ,
-  "outlier_th":[0.1,0.2,0.3,0.4],
+  "outlier_th":[0.15,0.25,0.35],
   "inlier_th":0.15,
   "norm_factor_fn":"norm_factor.json",
   "background_imgs_for_training":"/home/kiru/media/hdd/datasets/coco2017/train2017/",
