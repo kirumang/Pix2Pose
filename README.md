@@ -7,6 +7,7 @@ Original implementation of the paper, Kiru Park, Timothy Patten and Markus Vincz
 * Tensorflow > 1.8
 * Keras > 2.2.0
 * CUDA 9.0
+* Bop_toolkit (https://github.com/thodan/bop_toolkit)  
 * See python requirements in requirements.txt
 
 ### For detection pipelines,
@@ -68,10 +69,11 @@ python3 5_evaluation_bop_basic.py <gpu_id> <path_cfg_json> <dataset_name>
 #### ROS interface (tested with ROS-Kinetic)
 - Install ros_numpy: ```pip3 install ros_numpy```
 - To Run the ROS interface with our Python 3.5 code (since ROS-Kinectic uses python 2.7), we need a trick to run ROS node.
+For example,
 ```
 export PYTHONPATH=/usr/local/lib/python3.5/dist-packages:$PYTHONPATH(including other ROS related pathes)
 ```
-- Thus, libraries will be loaded from python3.5 path, while loading ros related packages (rospy) from ros library directories in python 2.7.
+- The first path can be replaced with the dist-packages folder in the virtual environment. Thus, libraries will be loaded from python3.5 path, while loading ros related packages (rospy) from ros library directories in python 2.7.
 - You have to specify the topic for RGB images + camera instrinsics in "ros_config.json" file. For more detail, please check out [ros_api_manual](ros_kinetic/ros_api.manual.md)
 - [WIP] Depth ICP when depth image topic is available. 
 - Current ros_config.json is to detect and estimate pose of YCB-Video objects. Download trained weights of YCB-V dataset to run this example. 
@@ -80,7 +82,7 @@ export PYTHONPATH=/usr/local/lib/python3.5/dist-packages:$PYTHONPATH(including o
 ### Training for a new dataset
 
 We assume the dataset is organized in the BOP 2019 format.
-For a new dataset (not in the BOP), modify bop_io.py properly to provide proper directories for training.
+For a new dataset (not in the BOP), modify [bop_io.py](tools/bop_io.py) properly to provide proper directories for training. Theses training codes are used to prepare and train the network for the BOP 2019.
 
 #### 1. Convert 3D models to colored coodinate models        
 ```
