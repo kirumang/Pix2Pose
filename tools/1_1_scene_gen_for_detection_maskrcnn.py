@@ -55,7 +55,7 @@ backfiles = os.listdir(back_dir)
 genMask=True
 if(len(sys.argv)==3):
     if(int(sys.argv[3])==0):genMask=False
-n_image=10
+n_image=200000
 
 bop_dir,source_dir,model_plys,model_info,model_ids,rgb_files,depth_files,mask_files,gts,cam_param_global = bop_io.get_dataset(cfg,dataset)
 
