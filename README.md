@@ -61,7 +61,7 @@ The original codes are updated to support the format of the most recent 6D pose 
    6. cand_factor: a factor for the number of detection candidates 
 5. Execute the script
 ```
-python3 5_evaluation_bop_basic.py <gpu_id> <path_cfg_json> <dataset_name>
+python3 5_evaluation_bop_basic.py <gpu_id> <cfg_path> <dataset_name>
 ```
 
 5. The output will be stored in the 'path_to_output' in csv format, which can be used to calculate metric using [bop_toolkit](https://github.com/thodan/bop_toolkit).
@@ -96,24 +96,24 @@ For a new dataset (not in the BOP), modify [bop_io.py](tools/bop_io.py) properly
 
 #### 1. Convert 3D models to colored coodinate models        
 ```
-python 2_1_ply_file_to_3d_coord_model <dataset_name>
+python3 2_1_ply_file_to_3d_coord_model <cfg_path> <dataset_name>
 ```
 The file converts 3D models and save them to the target folder with a dimension information in a file, "norm_factor.json".
 
 #### 2. Render and generate training pairs
 ```
-python 2_2_render_pix2pose_training.py <dataset_name>
+python3 2_2_render_pix2pose_training.py <cfg_path> <dataset_name>
 ```
 
 #### 3. Train pix2pose network for each object
 ```
-python 3_train_pix2pose.py <dataset_name> <obj_name> [background_img_folder]
+python3 3_train_pix2pose.py <cfg_path> <dataset_name> <obj_name> [background_img_folder]
 ```
 
 
 #### 4. Convert the last wegiht file to an inference file.
 ```
-python 4_convert_weights_inference.py <pix2pose_weights folder>
+python3 4_convert_weights_inference.py <pix2pose_weights folder>
 ```
 This program looks for the last weight file in each directory  
 
@@ -121,7 +121,7 @@ This program looks for the last weight file in each directory
 
 ##### (1) Generation of images for 2D detection training        
 ```
-python 1_1_scene_gen_for_detection.py <dataset_name> <mask=1(true)/0(false)>
+python3 1_1_scene_gen_for_detection.py <cfg_path> <dataset_name> <mask=1(true)/0(false)>
 ```
 Output files
 - a number of augmented images using crops of objects in training images
@@ -132,7 +132,7 @@ Output files
 ##### (2) Train Mask-RCNN or Keras-Retinanet
 To train Mask-RCNN, the pre-trained weight for the MS-COCO dataset should be place in <path/to/Mask-RCNN>/mask_rcnn_coco.h5.
 ```
-python 1_2_train_maskrcnn.py <dataset_name>
+python3 1_2_train_maskrcnn.py <cfg_path> <dataset_name>
 ```
 or
 Train Keras-retinanet using the script in the repository. It is highly recommended to initialize the network using the weights trained for the MS-COCO dataset. [link](https://github.com/fizyr/keras-retinanet/releases/download/0.5.1/resnet50_coco_best_v2.1.0.h5)
