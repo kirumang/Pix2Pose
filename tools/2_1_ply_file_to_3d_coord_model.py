@@ -14,16 +14,14 @@ from numpy.lib import recfunctions
 
 def get_xyz_max(fn_read):
     plydata = PlyData.read(fn_read)
-
     #x,y,z : embbedding to RGB
     x_ct = np.mean(plydata.elements[0].data['x'])    
-    x_abs = np.max(np.abs(plydata.elements[0].data['x']-x_ct))
-    
+    x_abs = np.max(np.abs(plydata.elements[0].data['x']-x_ct))    
     y_ct = np.mean(plydata.elements[0].data['y'])    
-    y_abs = np.max(np.abs(plydata.elements[0].data['y']-y_ct))    
+    y_abs = np.max(np.abs(plydata.elements[0].data['y']-y_ct))   
     
     z_ct = np.mean(plydata.elements[0].data['z'])    
-    z_abs = np.max(np.abs(plydata.elements[0].data['z']-z_ct))    
+    z_abs = np.max(np.abs(plydata.elements[0].data['z']-z_ct))   
     
     return x_abs,y_abs,z_abs,x_ct,y_ct,z_ct
     
@@ -48,9 +46,7 @@ def convert_unique(fn_read,fn_write,center_x=True,center_y=True,center_z=True):
         z_ct=0
     z_abs = np.max(np.abs(plydata.elements[0].data['z']-z_ct))    
     n_vert = plydata.elements[0].data['x'].shape[0]
-    dummy = np.zeros((n_vert),np.uint8)
-    d= plydata.elements[0].data.dtype
-    
+   
     for i in range(n_vert):
         r=(plydata.elements[0].data['x'][i]-x_ct)/x_abs #-1 to 1
         r = (r+1)/2 #0 to 2 -> 0 to 1        

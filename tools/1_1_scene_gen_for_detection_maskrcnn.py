@@ -213,7 +213,7 @@ if(dataset!='ycbv'):
                     patch_mask[d_pos_v:d_pos_v+h_aug,d_pos_u:d_pos_u+w_aug]=0
 
             mask_visible.append(np.sum(patch_mask))
-            patch_aug = aug_color.augment_image(patch*255)/255
+            patch_aug = aug_color.augment_image( (patch*255).astype(np.uint8) )/255
             delta_v = min(vs[order],im_width-patch_aug.shape[0])
             delta_u = min(us[order],im_height-patch_aug.shape[1])
 

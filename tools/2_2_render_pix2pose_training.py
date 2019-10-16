@@ -120,11 +120,8 @@ else:
         im_width = img_temp.shape[1]
      
     ren = Renderer((im_width,im_height),cam_K)
-t_model=-1
-if(len(sys.argv)==3):
-    print("render only this obj:",sys.argv[2])
-    t_model = int(sys.argv[2])
 
+t_model=-1
 for m_id,model_id in enumerate(model_ids):
         if(t_model!=-1 and model_id!=t_model):
             continue
