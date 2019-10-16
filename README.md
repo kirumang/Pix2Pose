@@ -9,6 +9,8 @@ Original implementation of the paper, Kiru Park, Timothy Patten and Markus Vincz
 * CUDA 9.0
 * Bop_toolkit (https://github.com/thodan/bop_toolkit)  
 * See python requirements in requirements.txt
+* (optional) Docker + Nvidia-docker (https://github.com/NVIDIA/nvidia-docker)
+
 
 ### For detection pipelines,
 * Keras implementation of [Mask-RCNN](https://github.com/matterport/Mask_RCNN): used for LineMOD in the paper and all datasets in the BOP Challenge, 
@@ -20,6 +22,7 @@ git clone https://github.com/matterport/Mask_RCNN.git
 ```
 git clone https://github.com/fizyr/keras-retinanet.git
 ```
+
 
 ---
 ### Citation
@@ -49,14 +52,14 @@ The original codes are updated to support the format of the most recent 6D pose 
      - <path_to_dataset>/<dataset_name>/models_xyz: norm_factor.json and .ply files of colorized 3d models
      - <path_to_dataset>/<dataset_name>/weight_detection: weight files for the detection
      - <path_to_dataset>/<dataset_name>/pix2pose_weights/<obj_name>/inference.hdf5 : weight files for each objects
-3. Set config file
+4. Set config file
    1. Set directories properly based on your environment
    2. For the bop challenge dataset: <path_to_src>/cfg/cfg_bop2019.json      
    3. Use trained weights for the paper: <path_to_src>/cfg/cfg_<dataset_name>_paper.json (e.g., cfg_tless_paper.json)
    4. score_type: 1-scores from a 2D detetion pipeline is used (used for the paper), 2-scores are caluclated using detection score+overlapped mask (only supported for Mask RCNN, used for the BOP challenge)
    5. task_type : 1 - SiSo task (2017 BOP Challenge), 2 - ViVo task (2019 BOP challenge format)  
    6. cand_factor: a factor for the number of detection candidates 
-4. Execute the script
+5. Execute the script
 ```
 python3 5_evaluation_bop_basic.py <gpu_id> <path_cfg_json> <dataset_name>
 ```
@@ -64,6 +67,13 @@ python3 5_evaluation_bop_basic.py <gpu_id> <path_cfg_json> <dataset_name>
 5. The output will be stored in the 'path_to_output' in csv format, which can be used to calculate metric using [bop_toolkit](https://github.com/thodan/bop_toolkit).
 
 **Important Note** Differ from the paper, we used multiple outlier thresholds in the second stage for the BOP challenge since it is not allowed to have different parameters for each object or each dataset. This can be done easily by set the "outlier_th" in a 1D-array (refer to cfg_bop2019.json). In this setup, the best result, which has the largest inlier points, will be derived during estimation after applying all values in the second stage. To reproduce the results in the paper with fixed outlier threshold values, a 2D-array should be given as in "cfg_tless_paper.json")
+
+#### Environment setup using Docker
+1. Build Dockerfile ```docker build -t <container_name> .```
+2. Start the container with
+ ```
+ nvidia-docker run -it -v <dasetdir>:/bop -v <detection_repo>:<detection_dir> -v <other_dir>:<other_dir> <container_name> bash
+ ```
 
 
 #### ROS interface (tested with ROS-Kinetic)
