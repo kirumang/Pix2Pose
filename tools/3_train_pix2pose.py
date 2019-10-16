@@ -14,6 +14,9 @@ os.environ['CUDA_VISIBLE_DEVICES'] = gpu_id
 
 ROOT_DIR = os.path.abspath(".")
 sys.path.append(ROOT_DIR)  # To find local version of the library
+sys.path.append("./bop_toolkit")
+
+from bop_toolkit_lib import inout,dataset_params
 
 from pix2pose_model import ae_model as ae
 import matplotlib.pyplot as plt
@@ -172,7 +175,7 @@ disc_losses=[]
 recont_losses=[]
 gen_losses=[]
 pre_loss=9999
-lr_current=lr_schedule[epoch]1
+lr_current=lr_schedule[epoch]
 
 real_ratio=1.0
 feed_iter= datagenerator.generator()
