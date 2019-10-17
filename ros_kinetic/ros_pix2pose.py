@@ -180,7 +180,7 @@ class pix2pose():
         trans_adjust = centroid_tgt - centroid_src
         tra_pred = tra_pred +trans_adjust*1000
         points_src[:,:3]+=trans_adjust
-        icp_fnc = cv2.ppf_match_3d_ICP(100,tolerence=0.1,numLevels=5) #1cm
+        icp_fnc = cv2.ppf_match_3d_ICP(100,tolerence=0.05,numLevels=5) #1cm
         retval, residual, pose=icp_fnc.registerModelToScene(points_src.reshape(-1,6), pts_tgt.reshape(-1,6))    
         
         tf = np.matmul(pose,tf)    
@@ -264,11 +264,12 @@ class pix2pose():
         self.sub.unregister()  
         timeout=1
         t_spend=0
-        while not(self.have_depth):
-            time.sleep(0.01)
-            t_spend+=0.01
-            if(t_spend>1):
-                break
+        if(icp):
+            while not(self.have_depth):
+                time.sleep(0.01)
+                t_spend+=0.01
+                if(t_spend>1):
+                    break
         if(icp and self.have_depth):
             depth_t = np.copy(self.depth_img)
             depth_t = np.nan_to_num(depth_t)
@@ -328,6 +329,8 @@ class pix2pose():
                             union_mask = np.logical_and(union_mask,depth_valid)
                             pts_tgt = points_tgt[union_mask]
                             tf,residual= self.icp_refinement(pts_tgt,self.obj_models[pix2pose_id],rot_pred,tra_pred)
+                            if(residual==-1):
+                                continue
                             rot_pred =tf[:3,:3]
                             tra_pred =tf[:3,3]*1000 
                             score=scores[r_id]/(residual+0.00001)
