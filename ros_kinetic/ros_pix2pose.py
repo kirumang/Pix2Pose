@@ -33,13 +33,20 @@ if detect_type=='rcnn':
     from tools.mask_rcnn_util import BopInferenceConfig
     
 #"/hsrb/head_rgbd_sensor/rgb/image_rect_color",
+
 icp=False
+if(int(cfg['icp'])==1):
+    icp=True
 if(icp):
+    #from rendering.gpu_render import cuda_renderer    
     from rendering import utils as renderutil
-    from rendering.renderer import Renderer
+    from rendering.renderer_xyz import Renderer
     from rendering.model import Model3D
 
 from pix2pose_model import recognition as recog
+from pix2pose_util.common_util import getXYZ,get_normal,get_bbox_from_mask
+
+
 import argparse
 import time
 import transforms3d as tf3d
@@ -63,9 +70,7 @@ class pix2pose():
 
         self.model_params =  inout.load_json(cfg['norm_factor_fn'])
         self.detection_labels= cfg['obj_labels'] #labels of corresponding detections
-        if(icp):
-         self.ren = Renderer((self.im_width, self.im_height), self.camK)
-
+        
         n_objs  = int(cfg['n_objs'])
         self.target_objs = cfg['target_obj_name']
         self.colors= np.random.randint(0,255,(n_objs,3))
@@ -102,9 +107,16 @@ class pix2pose():
             self.obj_pix2pose.append(recog_temp)
             ply_fn = os.path.join(self.cfg['model_dir'],self.cfg['ply_files'][t_id])               
             if(icp):
+               #obj_model = inout.load_ply(ply_fn)
+               #obj_model['pts']=obj_model['pts']*self.model_scale
+               #self.obj_models.append(obj_model)
+               
                obj_model = Model3D()
-               obj_model.load(ply_fn, scale=cfg['model_scale'])
+               obj_model.load(ply_fn, scale=self.model_scale)
                self.obj_models.append(obj_model)
+               obj_model2 = inout.load_ply(ply_fn)
+               self.obj_bboxes.append(self.get_3d_box_points(obj_model2['pts']))
+
             else:
                obj_model = inout.load_ply(ply_fn)
                self.obj_bboxes.append(self.get_3d_box_points(obj_model['pts']))
@@ -114,8 +126,66 @@ class pix2pose():
         
         #self.pose_pub = rospy.Publisher("/pix2pose/object_pose", Pose)
         self.pose_pub = rospy.Publisher("/pix2pose/object_pose", ros_image)
-        self.sub = rospy.Subscriber(self.rgb_topic, ros_image, self.callback)
+        self.sub = rospy.Subscriber(self.rgb_topic, ros_image, self.callback,queue_size=1)
+        if(icp):
+            self.sub_depth = rospy.Subscriber(self.depth_topic, ros_image, self.callback_depth,queue_size=1)
+            #self.ren = cuda_renderer(res_y=self.im_height,res_x=self.im_width)
+            #self.ren.set_cam(self.camK)
+            self.ren = Renderer((self.im_width,self.im_height),self.camK)
+            
+
         self.graph = tf.get_default_graph()
+        self.depth_img = np.zeros((self.im_height,self.im_width))
+        self.have_depth=False
+    def callback_depth(self,d_image):
+        self.depth_img = ros_numpy.numpify(d_image)             
+        self.have_depth=True
+        
+    def render_obj(self,obj_m,rot,tra):
+        self.ren.clear()
+        pred_pose=np.eye(4)
+        pred_pose[:3,:3]=rot.reshape(3,3)
+        if(tra[2]>100):tra=tra/1000
+        pred_pose[:3,3]=tra
+        self.ren.draw_model(obj_m, pred_pose)        
+        img, depth = self.ren.finish()
+        img = img[:,:,::-1]*255
+        return img,depth
+    def render_obj_gpu(self,obj_m,rot,tra):
+        if(tra[2]>100):tra=tra/1000
+        depth,mask,bbox = self.ren.render_obj(obj_m,rot,tra)
+        return depth,depth
+    def icp_refinement(self,pts_tgt,obj_model,rot_pred,tra_pred):
+        centroid_tgt = np.array([np.mean(pts_tgt[:,0]),np.mean(pts_tgt[:,1]),np.mean(pts_tgt[:,2])])
+        if(tra_pred[2]<300 or tra_pred[2]>5000): 
+            #when estimated translation is weired, set centroid of tgt points as translation
+            tra_pred = centroid_tgt*1000            
+        tf = np.eye(4)
+        tf[:3,:3]=rot_pred
+        tf[:3,3]=tra_pred/1000 #in m     
+        img_init,depth_init = self.render_obj(obj_model,rot_pred,tra_pred/1000)
+        #img_init,depth_init = self.render_obj_gpu(obj_model,rot_pred,tra_pred/1000)
+        
+        init_mask = depth_init>0
+        bbox_init = get_bbox_from_mask(init_mask>0)    
+        if(bbox_init[2]-bbox_init[0] < 10 or bbox_init[3]-bbox_init[1] < 10):
+            return tf, -1
+        if(np.sum(init_mask)<10):
+            return tf, -1
+        points_src = np.zeros((bbox_init[2]-bbox_init[0],bbox_init[3]-bbox_init[1],6),np.float32)
+        points_src[:,:,:3] = getXYZ(depth_init,self.camK[0,0],self.camK[1,1],self.camK[0,2],self.camK[1,2],bbox_init)
+        points_src[:,:,3:] = get_normal(depth_init,fx=self.camK[0,0],fy=self.camK[1,1],cx=self.camK[0,2],cy=self.camK[1,2],refine=True,bbox=bbox_init)
+        points_src = points_src[init_mask[bbox_init[0]:bbox_init[2],bbox_init[1]:bbox_init[3]]>0]
+        centroid_src = np.array([np.mean(points_src[:,0]),np.mean(points_src[:,1]),np.mean(points_src[:,2])])
+        trans_adjust = centroid_tgt - centroid_src
+        tra_pred = tra_pred +trans_adjust*1000
+        points_src[:,:3]+=trans_adjust
+        icp_fnc = cv2.ppf_match_3d_ICP(100,tolerence=0.1,numLevels=5) #1cm
+        retval, residual, pose=icp_fnc.registerModelToScene(points_src.reshape(-1,6), pts_tgt.reshape(-1,6))    
+        
+        tf = np.matmul(pose,tf)    
+        return tf,residual
+
     def get_3d_box_points(self,vertices):
         x_min = np.min(vertices[:,0])
         y_min = np.min(vertices[:,1])
@@ -187,9 +257,28 @@ class pix2pose():
         return rois,obj_orders,obj_ids,scores,masks
 
     def run(self):
+        rospy.Rate(1)
         rospy.spin()
 
-    def callback(self,r_image):        
+    def callback(self,r_image):
+        self.sub.unregister()  
+        timeout=1
+        t_spend=0
+        while not(self.have_depth):
+            time.sleep(0.01)
+            t_spend+=0.01
+            if(t_spend>1):
+                break
+        if(icp and self.have_depth):
+            depth_t = np.copy(self.depth_img)
+            depth_t = np.nan_to_num(depth_t)
+            depth_valid = np.logical_and(depth_t>0.2, depth_t<5)
+            points_tgt = np.zeros((depth_t.shape[0],depth_t.shape[1],6),np.float32)
+            points_tgt[:,:,:3] = getXYZ(depth_t,fx=self.camK[0,0],fy=self.camK[1,1],cx=self.camK[0,2],cy=self.camK[1,2])
+            points_tgt[:,:,3:] = get_normal(depth_t,fx=self.camK[0,0],fy=self.camK[1,1],cx=self.camK[0,2],cy=self.camK[1,2],refine=True)
+            self.have_depth=False     
+        if(icp):
+            self.sub_depth.unregister()
         with self.graph.as_default():
             data = ros_numpy.numpify(r_image)        
             image=np.copy(data) #bgr -> rgb order
@@ -227,13 +316,21 @@ class pix2pose():
                   if(frac_inlier==-1):
                         continue        
                   if(detect_type=='rcnn'):                               
-                        union = np.sum(np.logical_or(mask_from_detect,mask_pred))
+                        union_mask = np.logical_or(mask_from_detect,mask_pred)
+                        union = np.sum(union_mask)
                         if(union==0):
                            mask_iou=0
                            score = 0
                         else:
                            mask_iou = np.sum(np.logical_and(mask_from_detect,mask_pred))/union
                            score=scores[r_id]*frac_inlier*mask_iou*1000
+                        if(self.have_depth and icp):
+                            union_mask = np.logical_and(union_mask,depth_valid)
+                            pts_tgt = points_tgt[union_mask]
+                            tf,residual= self.icp_refinement(pts_tgt,self.obj_models[pix2pose_id],rot_pred,tra_pred)
+                            rot_pred =tf[:3,:3]
+                            tra_pred =tf[:3,3]*1000 
+                            score=scores[r_id]/(residual+0.00001)
                   else:
                         score = scores[r_id]
                   result_scores.append(score)
@@ -251,11 +348,17 @@ class pix2pose():
             #render detection results
             #render pose estimation results      
             for o_id, tf,score,roi in zip(result_ids,result_poses,result_scores,result_bbox):
-                img_pose = self.draw_3d_poses(self.obj_bboxes[o_id],tf,img_pose)
+                if(icp):
+                    img_pose = self.draw_3d_poses(self.obj_bboxes[o_id],tf,img_pose)
+                else:
+                    img_pose = self.draw_3d_poses(self.obj_bboxes[o_id],tf,img_pose)
                 cv2.putText(img_pose,'{:.3f}'.format(score),(roi[1],roi[0]),cv2.FONT_HERSHEY_SIMPLEX,1,(255,255,255),2,1)
             self.pose_pub.publish(ros_numpy.msgify(ros_image, img_pose[:,:,::-1], encoding='bgr8'))                  
+        self.sub = rospy.Subscriber(self.rgb_topic, ros_image, self.callback,queue_size=1)
+        self.sub_depth = rospy.Subscriber(self.depth_topic, ros_image, self.callback_depth,queue_size=1)
 if __name__ == '__main__':
     r= pix2pose(cfg)
+    
     r.run()
 
 	

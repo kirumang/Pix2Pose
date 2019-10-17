@@ -4,9 +4,6 @@ import random
 import transforms3d as tf3d
 import math
 import numpy as np
-import trimesh
-import copy
-
 import pycuda.driver as drv
 import pycuda.tools
 import pycuda.autoinit
