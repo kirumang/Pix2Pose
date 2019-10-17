@@ -37,6 +37,7 @@ if detect_type=='rcnn':
 icp=False
 if(int(cfg['icp'])==1):
     icp=True
+    print("Run with ICP")
 if(icp):
     #from rendering.gpu_render import cuda_renderer    
     from rendering import utils as renderutil
