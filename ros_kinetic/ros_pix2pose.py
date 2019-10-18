@@ -38,10 +38,6 @@ icp=False
 if(int(cfg['icp'])==1):
     icp=True
     print("Run with ICP")
-    from rendering import utils as renderutil
-    from rendering.renderer_xyz import Renderer
-    from rendering.model import Model3D
-    from rendering.gpu_render import cuda_renderer
     import trimesh
     import pyrender
 
