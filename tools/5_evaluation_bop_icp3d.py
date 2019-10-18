@@ -49,10 +49,44 @@ def render_obj(obj_m,rot,tra,cam_K,ren):
         return img,depth
 
 def render_obj_gpu(obj_m,rot,tra,cam_K,ren):
-        if(tra[2]>100):tra=tra/1000
-        #print(rot,tra)
-        depth,mask,bbox = ren.render_obj(obj_m,rot,tra)
-        return depth,depth
+    if(tra[2]>100):tra=tra/1000
+    #print(rot,tra)
+    ren.set_cam(cam_K)
+    depth,mask,bbox = ren.render_obj(obj_m,rot,tra)    
+    return depth,depth
+def icp_refinement(pts_tgt,obj_model,rot_pred,tra_pred,cam_K,ren):
+    centroid_tgt = np.array([np.mean(pts_tgt[:,0]),np.mean(pts_tgt[:,1]),np.mean(pts_tgt[:,2])])
+    if(tra_pred[2]<300 or tra_pred[2]>5000): 
+        tra_pred = centroid_tgt*1000            
+    
+    #opengl renderer (bit slower, more precise)
+    #img_init,depth_init = render_obj(obj_models[obj_order_id],rot_pred,tra_pred/1000,cam_K,ren)
+    img_init,depth_init = render_obj_gpu(obj_model,rot_pred,tra_pred/1000,cam_K,ren)
+    init_mask = depth_init>0
+    bbox_init = get_bbox_from_mask(init_mask>0)    
+    if(bbox_init[2]-bbox_init[0] < 10 or bbox_init[3]-bbox_init[1] < 10): 
+        return tf,-1
+    if(np.sum(init_mask)<10):
+        return tf,-1
+    points_src = np.zeros((bbox_init[2]-bbox_init[0],bbox_init[3]-bbox_init[1],6),np.float32)
+    points_src[:,:,:3] = getXYZ(depth_init,cam_K[0,0],cam_K[1,1],cam_K[0,2],cam_K[1,2],bbox_init)
+    points_src[:,:,3:] = get_normal(depth_init,fx=cam_K[0,0],fy=cam_K[1,1],cx=cam_K[0,2],cy=cam_K[1,2],refine=True,bbox=bbox_init)
+    points_src = points_src[init_mask[bbox_init[0]:bbox_init[2],bbox_init[1]:bbox_init[3]]>0]
+
+    #adjust the initial translation using centroids of visible points
+    centroid_src = np.array([np.mean(points_src[:,0]),np.mean(points_src[:,1]),np.mean(points_src[:,2])])
+    trans_adjust = centroid_tgt - centroid_src
+    tra_pred = tra_pred +trans_adjust*1000
+    points_src[:,:3]+=trans_adjust
+
+    icp_fnc = cv2.ppf_match_3d_ICP(100,tolerence=0.05,numLevels=4) #1cm
+    retval, residual, pose=icp_fnc.registerModelToScene(points_src.reshape(-1,6), pts_tgt.reshape(-1,6))    
+    
+    tf = np.eye(4)
+    tf[:3,:3]=rot_pred
+    tf[:3,3]=tra_pred/1000 #in m     
+    tf = np.matmul(pose,tf)    
+    return tf,residual
 
 cfg_fn =sys.argv[2]
 cfg = inout.load_json(cfg_fn)
@@ -250,10 +284,6 @@ for m_id,model_id in enumerate(model_ids):
     obj_names.append(model_id)
     
     ply_fn=model_plys[m_id]    
-    #obj_model = Model3D()
-    #obj_model.load(ply_fn, scale=0.001)
-    #obj_models.append(obj_model)
-    ply_fn=model_plys[m_id]    
     obj_model = inout.load_ply(ply_fn)
     obj_model['pts']=obj_model['pts']/1000
     obj_models.append(obj_model)
@@ -305,6 +335,7 @@ for scene_id,im_id,obj_id_targets,inst_counts in target_list:
         image_t = inout.load_im(rgb_path)        
     depth_path = test_dir+"/{:06d}/depth/{:06d}.png".format(scene_id,im_id)    
     depth_t = inout.load_depth(depth_path)/1000*depth_scale
+    depth_valid = np.logical_and(depth_t>0.2, depth_t<5)
 
     points_tgt = np.zeros((depth_t.shape[0],depth_t.shape[1],6),np.float32)
     points_tgt[:,:,:3] = getXYZ(depth_t,fx=cam_K[0,0],fy=cam_K[1,1],cx=cam_K[0,2],cy=cam_K[1,2])
@@ -362,56 +393,21 @@ for scene_id,im_id,obj_id_targets,inst_counts in target_list:
             else:
                 mask_iou = np.sum(np.logical_and(mask_from_detect,mask_pred))/union
             
+            union_mask = np.logical_and(union_mask,depth_valid)
             pts_tgt = points_tgt[union_mask]
-            centroid_tgt = np.array([np.mean(pts_tgt[:,0]),np.mean(pts_tgt[:,1]),np.mean(pts_tgt[:,2])])
-            
-            if(tra_pred[2]<300 or tra_pred[2]>5000): 
-                #when estimated translation is weired, set centroid of tgt points as translation
-                tra_pred = centroid_tgt*1000            
-
-            #img_init,depth_init = render_obj(obj_models[obj_order_id],rot_pred,tra_pred/1000,cam_K,ren)
-            img_init,depth_init = render_obj_gpu(obj_models[obj_order_id],rot_pred,tra_pred/1000,cam_K,ren)
-            init_mask = depth_init>0
-            bbox_init = get_bbox_from_mask(init_mask>0)    
-            if(bbox_init[2]-bbox_init[0] < 10 or bbox_init[3]-bbox_init[1] < 10): continue #skip too small objects
-            
-
-            if(np.sum(init_mask)<10):
+            tf,residual = icp_refinement(pts_tgt,obj_models[obj_order_id],rot_pred,tra_pred,cam_K,ren)
+            if(residual==-1):
                 continue
-            points_src = np.zeros((bbox_init[2]-bbox_init[0],bbox_init[3]-bbox_init[1],6),np.float32)
-            points_src[:,:,:3] = getXYZ(depth_init,cam_K[0,0],cam_K[1,1],cam_K[0,2],cam_K[1,2],bbox_init)
-            points_src[:,:,3:] = get_normal(depth_init,fx=cam_K[0,0],fy=cam_K[1,1],cx=cam_K[0,2],cy=cam_K[1,2],refine=True,bbox=bbox_init)
-            points_src = points_src[init_mask[bbox_init[0]:bbox_init[2],bbox_init[1]:bbox_init[3]]>0]
-            if(depth_adjust):
-                centroid_src = np.array([np.mean(points_src[:,0]),np.mean(points_src[:,1]),np.mean(points_src[:,2])])
-                trans_adjust = centroid_tgt - centroid_src
-                tra_pred = tra_pred +trans_adjust*1000
-                points_src[:,:3]+=trans_adjust
-            #multithreading possible 
-            icp = cv2.ppf_match_3d_ICP(100,tolerence=0.05,numLevels=4) #1cm
-            retval, residual, pose=icp.registerModelToScene(points_src.reshape(-1,6), pts_tgt.reshape(-1,6))    
-            
-            tf = np.eye(4)
-            tf[:3,:3]=rot_pred
-            tf[:3,3]=tra_pred/1000 #in m     
-            tf = np.matmul(pose,tf)    
             rot_pred_refined =tf[:3,:3]
-            tra_pred_refined =tf[:3,3]*1000 #back to mm
-            
-            #rot_diff = np.matmul(rot_pred_refined,np.linalg.inv(rot_pred))
-            #tra_diff = np.abs(tra_pred,tra_pred_refined)
-            #max_rot_diff =np.max(np.abs(np.array(tf3d.euler.mat2euler(rot_diff))))               
-            #if max_rot_diff>math.pi/4 or np.max(tra_diff)>0.3:
-            #    rot_pred_refined=rot_pred
-            #    tra_pred_refined=tra_pred    
-
-            if(tra_pred_refined[2]/1000<0.2):continue            
+            tra_pred_refined =tf[:3,3]*1000 
             img_ref,depth_ref = render_obj_gpu(obj_models[obj_order_id],rot_pred_refined,tra_pred_refined/1000,cam_K,ren)
-            #union_mask
             diff_mask = np.abs(depth_ref[union_mask]-depth_t[union_mask])<0.02
-            ratio = np.sum(diff_mask)/union
-            score=np.sum(diff_mask)#scores[r_id]/residual #the larger the better
-            #score= scores[r_id]#scores[r_id]/residual*frac_inlier*mask_iou*union#+ratio
+            ratio = np.sum(diff_mask)/union            
+            score=scores[r_id]*np.sum(diff_mask)/(residual+0.00001)# -> ycbv:0.3384
+            #score =scores[r_id]*np.sum(diff_mask) #0.28
+            #bopbop
+            #score= scores[r_id]/residual*frac_inlier*mask_iou*union*ratio #0.28
+            #score = scores[r_id]*frac_inlier*mask_iou*union
             rot_pred = rot_pred_refined
             tra_pred = tra_pred_refined
         else:
@@ -420,8 +416,7 @@ for scene_id,im_id,obj_id_targets,inst_counts in target_list:
         result_score.append(score)
         result_objid.append(obj_id)
         result_R.append(rot_pred)
-        result_t.append(tra_pred)
-        
+        result_t.append(tra_pred)        
     if len(result_score)>0:
         result_score = np.array(result_score)
         result_score = result_score/np.max(result_score) #normalize

@@ -161,9 +161,6 @@ class pix2pose():
         if(tra_pred[2]<300 or tra_pred[2]>5000): 
             #when estimated translation is weired, set centroid of tgt points as translation
             tra_pred = centroid_tgt*1000            
-        tf = np.eye(4)
-        tf[:3,:3]=rot_pred
-        tf[:3,3]=tra_pred/1000 #in m     
         img_init,depth_init = self.render_obj(obj_model,rot_pred,tra_pred/1000)
         #img_init,depth_init = self.render_obj_gpu(obj_model,rot_pred,tra_pred/1000)
         
@@ -183,7 +180,9 @@ class pix2pose():
         points_src[:,:3]+=trans_adjust
         icp_fnc = cv2.ppf_match_3d_ICP(100,tolerence=0.05,numLevels=5) #1cm
         retval, residual, pose=icp_fnc.registerModelToScene(points_src.reshape(-1,6), pts_tgt.reshape(-1,6))    
-        
+        tf = np.eye(4)
+        tf[:3,:3]=rot_pred
+        tf[:3,3]=tra_pred/1000 #in m             
         tf = np.matmul(pose,tf)    
         return tf,residual
 
@@ -271,19 +270,18 @@ class pix2pose():
                 t_spend+=0.01
                 if(t_spend>1):
                     break
+            self.sub_depth.unregister()
         if(icp and self.have_depth):
             depth_t = np.copy(self.depth_img)
             depth_t = np.nan_to_num(depth_t)
-            depth_valid = np.logical_and(depth_t>0.2, depth_t<5)
+            depth_valid = np.logical_and(depth_t>0.2, depth_t<3)
             points_tgt = np.zeros((depth_t.shape[0],depth_t.shape[1],6),np.float32)
             points_tgt[:,:,:3] = getXYZ(depth_t,fx=self.camK[0,0],fy=self.camK[1,1],cx=self.camK[0,2],cy=self.camK[1,2])
             points_tgt[:,:,3:] = get_normal(depth_t,fx=self.camK[0,0],fy=self.camK[1,1],cx=self.camK[0,2],cy=self.camK[1,2],refine=True)
             self.have_depth=False     
-        if(icp):
-            self.sub_depth.unregister()
         with self.graph.as_default():
             data = ros_numpy.numpify(r_image)        
-            image=np.copy(data) #bgr -> rgb order
+            image=np.copy(data)
             bbox_pred = np.zeros((4),np.int)
             rois,obj_orders,obj_ids,scores,masks= self.get_rcnn_detection(image)
             result_scores=[]
@@ -317,6 +315,7 @@ class pix2pose():
                   self.obj_pix2pose[pix2pose_id].est_pose(image,roi.astype(np.int))            
                   if(frac_inlier==-1):
                         continue        
+                  tra_ori = np.copy(tra_pred)
                   if(detect_type=='rcnn'):                               
                         union_mask = np.logical_or(mask_from_detect,mask_pred)
                         union = np.sum(union_mask)
@@ -335,6 +334,7 @@ class pix2pose():
                             rot_pred =tf[:3,:3]
                             tra_pred =tf[:3,3]*1000 
                             score=scores[r_id]/(residual+0.00001)
+                            print("before:",tra_ori," --> after:",tra_pred)
                   else:
                         score = scores[r_id]
                   result_scores.append(score)
