@@ -14,6 +14,13 @@ List of parameters for running Pix2Pose with ROS
 * depth_topic: ros topic for depth images
 * cam_K, im_height, im_width: camera information (precise cam_K is important to obtain accurate results)
 
+### Requirements
+* ros-kinetic with python packages
+* ros_numpy
+* (for ICP) pyrender (pip3 install pyrender)
+* (for ICP) trimesh (pip3 install trimesh)
+
+### Execute the ros node
 Run the rosnode by,
 ```
 python3 ros_kinetic/ros_pix2pose.py
