@@ -92,7 +92,7 @@ export PYTHONPATH=/usr/local/lib/python3.5/dist-packages:$PYTHONPATH(including o
 ```
 - The first path can be replaced with the dist-packages folder in the virtual environment. Thus, libraries will be loaded from python3.5 path, while loading ros related packages (rospy) from ros library directories in python 2.7.
 - You have to specify the topic for RGB images + camera instrinsics in "ros_config.json" file. For more detail, please check out [ros_api_manual](ros_kinetic/ros_api.manual.md)
-- [WIP] Depth ICP when depth image topic is available. 
+- ICP refinement when the depth image topic is available.
 - Current ros_config.json is to detect and estimate pose of YCB-Video objects. Download trained weights of YCB-V dataset to run this example. 
 ---
 
