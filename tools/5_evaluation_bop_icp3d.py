@@ -186,11 +186,12 @@ im_width,im_height =cam_param_global['im_size']
 cam_K = cam_param_global['K']
 model_params =inout.load_json(os.path.join(bop_dir+"/models_xyz/",cfg['norm_factor_fn']))
 
-ren = Renderer((im_width,im_height),cam_K)
-ren.set_cam(cam_K)
-
-#ren = cuda_renderer(res_y=im_height,res_x=im_width)
-#ren.set_cam(cam_K)
+if(gpu_rendering):
+    ren = cuda_renderer(res_y=im_height,res_x=im_width)
+    ren.set_cam(cam_K)
+else:
+    ren = Renderer((im_width,im_height),cam_K)
+    ren.set_cam(cam_K)
 
 depth_adjust=True
 
