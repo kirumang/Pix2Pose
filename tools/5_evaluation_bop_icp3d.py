@@ -20,6 +20,7 @@ gpu_id = sys.argv[1]
 if(gpu_id=='-1'):
     gpu_id=''
 os.environ['CUDA_VISIBLE_DEVICES'] = gpu_id
+gpu_rendering=False
 import tensorflow as tf
 from bop_toolkit_lib import inout
 from tools import bop_io
@@ -28,12 +29,12 @@ from pix2pose_model import ae_model as ae
 from pix2pose_model import recognition as recog
 from pix2pose_util.common_util import getXYZ,get_normal,get_bbox_from_mask
 
-
-#from rendering import utils as renderutil
-#from rendering.renderer_xyz import Renderer
-#from rendering.model import Model3D
-
-from rendering.gpu_render import cuda_renderer
+if(gpu_rendering):
+    from rendering.gpu_render import cuda_renderer
+else:
+    from rendering import utils as renderutil
+    from rendering.renderer_xyz import Renderer
+    from rendering.model import Model3D
 
 import math
 def render_obj(obj_m,rot,tra,cam_K,ren):
@@ -47,7 +48,6 @@ def render_obj(obj_m,rot,tra,cam_K,ren):
         img, depth = ren.finish()
         img = img[:,:,::-1]*255
         return img,depth
-
 def render_obj_gpu(obj_m,rot,tra,cam_K,ren):
     if(tra[2]>100):tra=tra/1000
     #print(rot,tra)
@@ -60,10 +60,13 @@ def icp_refinement(pts_tgt,obj_model,rot_pred,tra_pred,cam_K,ren):
         tra_pred = centroid_tgt*1000            
     
     #opengl renderer (bit slower, more precise)
-    #img_init,depth_init = render_obj(obj_models[obj_order_id],rot_pred,tra_pred/1000,cam_K,ren)
-    img_init,depth_init = render_obj_gpu(obj_model,rot_pred,tra_pred/1000,cam_K,ren)
+    if(gpu_rendering):
+        img_init,depth_init = render_obj_gpu(obj_model,rot_pred,tra_pred/1000,cam_K,ren)
+    else:
+        img_init,depth_init = render_obj(obj_models[obj_order_id],rot_pred,tra_pred/1000,cam_K,ren)
     init_mask = depth_init>0
     bbox_init = get_bbox_from_mask(init_mask>0)    
+    tf =np.eye(4)    
     if(bbox_init[2]-bbox_init[0] < 10 or bbox_init[3]-bbox_init[1] < 10): 
         return tf,-1
     if(np.sum(init_mask)<10):
@@ -82,7 +85,6 @@ def icp_refinement(pts_tgt,obj_model,rot_pred,tra_pred,cam_K,ren):
     icp_fnc = cv2.ppf_match_3d_ICP(100,tolerence=0.05,numLevels=4) #1cm
     retval, residual, pose=icp_fnc.registerModelToScene(points_src.reshape(-1,6), pts_tgt.reshape(-1,6))    
     
-    tf = np.eye(4)
     tf[:3,:3]=rot_pred
     tf[:3,3]=tra_pred/1000 #in m     
     tf = np.matmul(pose,tf)    
@@ -173,9 +175,7 @@ sess = tf.Session(config=config)
 dataset=sys.argv[3]
 vis=False
 output_dir = cfg['path_to_output']
-output_img = output_dir+"/" +dataset
-if not(os.path.exists(output_img)):
-    os.makedirs(output_img)
+
 
 bop_dir,test_dir,model_plys,\
 model_info,model_ids,rgb_files,\
@@ -186,11 +186,11 @@ im_width,im_height =cam_param_global['im_size']
 cam_K = cam_param_global['K']
 model_params =inout.load_json(os.path.join(bop_dir+"/models_xyz/",cfg['norm_factor_fn']))
 
-#ren = Renderer((im_width,im_height),cam_K)
-#ren.set_cam(cam_K)
-
-ren = cuda_renderer(res_y=im_height,res_x=im_width)
+ren = Renderer((im_width,im_height),cam_K)
 ren.set_cam(cam_K)
+
+#ren = cuda_renderer(res_y=im_height,res_x=im_width)
+#ren.set_cam(cam_K)
 
 depth_adjust=True
 
@@ -282,10 +282,13 @@ for m_id,model_id in enumerate(model_ids):
                                 th_inlier=th_inlier)
     obj_pix2pose.append(recog_temp)    
     obj_names.append(model_id)
-    
     ply_fn=model_plys[m_id]    
-    obj_model = inout.load_ply(ply_fn)
-    obj_model['pts']=obj_model['pts']/1000
+    if(gpu_rendering):
+        obj_model = inout.load_ply(ply_fn)
+        obj_model['pts']=obj_model['pts']*0.001 #mm to m scale
+    else:
+        obj_model = Model3D()
+        obj_model.load(ply_fn,scale=0.001)#mm to m scale
     obj_models.append(obj_model)
 
 
@@ -350,6 +353,7 @@ for scene_id,im_id,obj_id_targets,inst_counts in target_list:
     elif(detect_type=='retinanet'):
         rois,obj_orders,obj_ids,scores = get_retinanet_detection(image_t,model)
     
+    
     result_score=[]
     result_objid=[]
     result_R=[]
@@ -383,40 +387,41 @@ for scene_id,im_id,obj_id_targets,inst_counts in target_list:
         if(tra_pred[2]/1000<0.2):
                 continue
             
-        if(score_type==2 and detect_type=='rcnn'):       
+        if(score_type==2 and detect_type=='rcnn'):
             mask_from_detect = masks[:,:,r_id]    
             union_mask = np.logical_or(mask_from_detect,mask_pred)
+            union_mask = np.logical_and(union_mask,depth_valid)
             union = np.sum(union_mask)
             if(union<=30):
                 mask_iou=0
                 continue
             else:
                 mask_iou = np.sum(np.logical_and(mask_from_detect,mask_pred))/union
-            
-            union_mask = np.logical_and(union_mask,depth_valid)
+           
             pts_tgt = points_tgt[union_mask]
             tf,residual = icp_refinement(pts_tgt,obj_models[obj_order_id],rot_pred,tra_pred,cam_K,ren)
             if(residual==-1):
                 continue
             rot_pred_refined =tf[:3,:3]
             tra_pred_refined =tf[:3,3]*1000 
-            img_ref,depth_ref = render_obj_gpu(obj_models[obj_order_id],rot_pred_refined,tra_pred_refined/1000,cam_K,ren)
+            if(gpu_rendering):                
+                img_ref,depth_ref = render_obj_gpu(obj_models[obj_order_id],rot_pred_refined,tra_pred_refined/1000,cam_K,ren)
+            else:
+                img_ref,depth_ref = render_obj(obj_models[obj_order_id],rot_pred_refined,tra_pred_refined/1000,cam_K,ren)
+                
             diff_mask = np.abs(depth_ref[union_mask]-depth_t[union_mask])<0.02
             ratio = np.sum(diff_mask)/union            
-            score=scores[r_id]*np.sum(diff_mask)/(residual+0.00001)# -> ycbv:0.3384
-            #score =scores[r_id]*np.sum(diff_mask) #0.28
-            #bopbop
-            #score= scores[r_id]/residual*frac_inlier*mask_iou*union*ratio #0.28
-            #score = scores[r_id]*frac_inlier*mask_iou*union
+            score =scores[r_id]*np.sum(diff_mask)#ycbv
             rot_pred = rot_pred_refined
             tra_pred = tra_pred_refined
         else:
             score = scores[r_id]    
 
-        result_score.append(score)
+        result_score.append(score)        
         result_objid.append(obj_id)
         result_R.append(rot_pred)
         result_t.append(tra_pred)        
+    
     if len(result_score)>0:
         result_score = np.array(result_score)
         result_score = result_score/np.max(result_score) #normalize
@@ -443,6 +448,7 @@ for scene_id,im_id,obj_id_targets,inst_counts in target_list:
         result_temp ={'scene_id':scene_id,'im_id': im_id,'obj_id':obj_id,'score':score,'R':R,'t':t,'time':time_spend }
         result_dataset.append(result_temp)
 
+
 if(dataset=='tless'):
     output_path = os.path.join(output_dir,"pix2pose-iccv19_"+dataset+"-test-primesense.csv")
 else:
@@ -450,4 +456,6 @@ else:
 
 print("Saving the result to ",output_path)
 inout.save_bop_results(output_path,result_dataset)
+
+
 
