@@ -3,11 +3,12 @@ Original implementation of the paper, Kiru Park, Timothy Patten and Markus Vincz
 
 ### Requirements:
 * Tested environment: Ubuntu 16.04 (64bit)
-* Python 3.5
+* Python > 3.5
 * Tensorflow > 1.8
 * Keras > 2.2.0
-* CUDA 9.0
+* CUDA > 9.0
 * Bop_toolkit (https://github.com/thodan/bop_toolkit)  
+* (optional:for faster icp refinement) pycuda 
 * See python requirements in requirements.txt
 
 ### For detection pipelines,
@@ -57,9 +58,16 @@ The original codes are updated to support the format of the most recent 6D pose 
    5. task_type : 1 - SiSo task (2017 BOP Challenge), 2 - ViVo task (2019 BOP challenge format)  
    6. cand_factor: a factor for the number of detection candidates 
 4. Execute the script
+
 ```
 python3 5_evaluation_bop_basic.py <gpu_id> <path_cfg_json> <dataset_name>
 ```
+
+to run with the 3D-ICP refinement, 
+```
+python3 5_evaluation_bop_icp3d.py <gpu_id> <path_cfg_json> <dataset_name>
+```
+
 
 5. The output will be stored in the 'path_to_output' in csv format, which can be used to calculate metric using [bop_toolkit](https://github.com/thodan/bop_toolkit).
 
