@@ -55,6 +55,12 @@ def get_dataset(cfg,dataset,train=True,incl_param=False,eval=False,eval_model=Fa
       train_dir = bop_dataset_dir+"/train"
       model_dir = bop_dataset_dir+"/models"+postfix_model
       model_scale=0.001
+    elif(dataset=='ruapc'):
+      bop_dataset_dir = os.path.join(bop_dir,"ruapc")
+      test_dir = bop_dataset_dir+"/test"
+      train_dir = bop_dataset_dir+"/train"
+      model_dir = bop_dataset_dir+"/models"+postfix_model
+      model_scale=0.001
     elif(dataset=='hb'):
       bop_dataset_dir = os.path.join(bop_dir,"hb")
       test_dir = bop_dataset_dir+"/test"

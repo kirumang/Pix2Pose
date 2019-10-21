@@ -1,4 +1,4 @@
-tensorflow-gpu=1.8.0
+tensorflow-gpu=1.9.0
 keras==2.2.1
 opencv-python==3.4.2.17
 opencv-contrib-python==3.4.2.17
@@ -7,7 +7,6 @@ matplotlib==2.2.4
 imgaug=0.2.7
 pypng=0.0.20
 pytz
-
 
 
 
