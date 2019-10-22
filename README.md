@@ -170,7 +170,6 @@ keras_retinanet/bin/convert_model.py /path/to/training/model.h5 /path/to/save/in
 ---
 
 ### Download: trained weights for the BOP challenge 2019
-**The weights will be upload after the final submission of the challenge results.**
 For the BOP challenge, we used Mask-RCNN to measure a score values for the current estimations using ovelapped ratios between masks from Mask-RCNN and the Pix2Pose estimation. All the hyperparameters, including augmentation, are set to the same for all datasets during the training and test. (33K iterations using 50 images in a mini batch)
 
 These trained weights here are used to submit the results of core datasets in [the BOP Challenge 2019](https://bop.felk.cvut.cz/challenges).
@@ -178,20 +177,15 @@ Due to the large number of objects for training, the number of iterations are re
 
 Download the zip files and extract them to the bop dataset folder
 e.g., for hb, the extracted files should placed in
-- [path to bop dataset]/hb/weight_detection/hb20190927T0827/mask_rcnn_hb_0005.h5
-- [path to bop dataset]/hb/pix2pose_weights/[obj_no]
+- [path to bop dataset]/tless/weight_detection/tless20190927T0827/mask_rcnn_tless_0005.h5
+- [path to bop dataset]/tless/pix2pose_weights/[obj_no]
 
-* LMO: 2D Mask R-CNN Detection + Pix2Pose weights
- 
-  *[Note] Networks are trained using synthetic images to follow the rule of the challenge, which is a totally different condition that we assumed in our paper. In the paper, we used only real images in the LineMOD dataset for trainng.
-
-* T-Less: 2D Mask R-CNN Detection + Pix2Pose weights 
-* ITODD: 2D Mask R-CNN Detection + Pix2Pose weight
-* HB: 2D Mask R-CNN Detection + Pix2Pose weights
-* YCBV: 2D Mask R-CNN Detection + Pix2Pose weights 
-* ICBIN: 2D Mask R-CNN Detection + Pix2Pose weights
-* TUDL: 2D Mask R-CNN Detection + Pix2Pose weights
-
+* T-Less: [2D Mask R-CNN Detection + Pix2Pose weights](https://drive.google.com/open?id=1-0fsXuwTYSOlCaPeePgDY-IAuMxRjcOG)
+* YCBV: [2D Mask R-CNN Detection + Pix2Pose weights](https://drive.google.com/open?id=1FW6wxkPw64j_NsBnc5g4HkwPlfRFefbN)
+* ICBIN: [2D Mask R-CNN Detection + Pix2Pose weights](https://drive.google.com/open?id=1c7KvBs0xcPcQgvmRxwyYbdBzh9a-Vt30)
+* TUDL: [2D Mask R-CNN Detection + Pix2Pose weights](https://drive.google.com/open?id=1N4Yetze3iSyVmVOTwGfVI6CHgZX_RFA3)
+* HB: [2D Mask R-CNN Detection + Pix2Pose weights](https://drive.google.com/open?id=1PpReSRHMQ4z0-BUpffrBF61d-PSAH3w6)
+* RU-APC: [2D Mask R-CNN Detection + Pix2Pose weights](https://drive.google.com/open?id=1PvSrV2Gj463QWQxYsbTjcD0OKovha8oZ)
 
 ### Contributors:
 * Kiru Park - email: park@acin.tuwien.ac.at / kirumang@gmail.com
