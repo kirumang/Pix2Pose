@@ -115,9 +115,6 @@ class pix2pose():
                     obj_model.vertices  = obj_model.vertices*self.model_scale
                     mesh = pyrender.Mesh.from_trimesh(obj_model)
                     self.obj_models.append(mesh)
-
-                    obj_model = Model3D()
-                    obj_model.load(ply_fn)
                     self.obj_bboxes.append(self.get_3d_box_points(obj_model.vertices))
                     
                 else:
@@ -291,7 +288,6 @@ class pix2pose():
                     points_tgt = np.zeros((depth_t.shape[0],depth_t.shape[1],6),np.float32)
                     points_tgt[:,:,:3] = getXYZ(depth_t,fx=self.camK[0,0],fy=self.camK[1,1],cx=self.camK[0,2],cy=self.camK[1,2])
                     points_tgt[:,:,3:] = get_normal(depth_t,fx=self.camK[0,0],fy=self.camK[1,1],cx=self.camK[0,2],cy=self.camK[1,2],refine=True)
-                    self.ren = Renderer((self.im_width,self.im_height),self.camK)
             data = ros_numpy.numpify(r_image)        
             image=np.copy(data)
             bbox_pred = np.zeros((4),np.int)
