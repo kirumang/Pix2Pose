@@ -75,7 +75,7 @@ python3 tools/5_evaluation_bop_icp3d.py <gpu_id> <path_cfg_json> <dataset_name>
 
 **Important Note** Differ from the paper, we used multiple outlier thresholds in the second stage for the BOP challenge since it is not allowed to have different parameters for each object or each dataset. This can be done easily by set the "outlier_th" in a 1D-array (refer to cfg_bop2019.json). In this setup, the best result, which has the largest inlier points, will be derived during estimation after applying all values in the second stage. To reproduce the results in the paper with fixed outlier threshold values, a 2D-array should be given as in "cfg_tless_paper.json")
 
-#### Environment setup using Docker
+#### (Optional) Environment setup using Docker
 1. Build Dockerfile ```docker build -t <container_name> .```
 2. Start the container with
  ```
