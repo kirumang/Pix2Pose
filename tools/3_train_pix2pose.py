@@ -113,7 +113,14 @@ if('symmetries_continuous' in keys):
 optimizer_dcgan =Adam(lr=1E-4, beta_1=0.9, beta_2=0.999, epsilon=1e-08) 
 optimizer_disc = Adam(lr=1E-4, beta_1=0.9, beta_2=0.999, epsilon=1e-08) 
 
-generator_train = ae.aemodel_unet_prob(p=1.0)
+if('backbone' in cfg.keys()):
+    if(cfg['backbone']=="resnet50"):
+        generator_train = ae.aemodel_unet_resnet50(p=1.0)
+    else:
+        generator_train = ae.aemodel_unet_prob(p=1.0)
+else:
+    generator_train = ae.aemodel_unet_prob(p=1.0)
+
 discriminator = ae.DCGAN_discriminator()
 imsize=128
 dcgan_input = Input(shape=(imsize, imsize, 3))
