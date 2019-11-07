@@ -238,7 +238,7 @@ for X_src,X_tgt,disc_tgt,prob_gt in iter_:
         imgfn = weight_dir+"/val_img/"+weight_prefix+"_{:02d}.png".format(epoch)
         if not(os.path.exists(weight_dir+"/val_img/")):
             os.makedirs(weight_dir+"/val_img/")
-
+        
         f,ax=plt.subplots(10,3,figsize=(10,20))
         for i in range(10):
             ax[i,0].imshow( (X_src[i]+1)/2)
