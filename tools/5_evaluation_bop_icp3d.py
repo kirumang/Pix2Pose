@@ -267,6 +267,11 @@ obj_pix2pose=[]
 obj_names=[]
 obj_models=[]
 image_dummy=np.zeros((im_height,im_width,3),np.uint8)
+if( 'backbone' in cfg.keys()):
+    backbone = cfg['backbone']
+else:
+    backbone = 'paper'
+
 for m_id,model_id in enumerate(model_ids):
     model_param = model_params['{}'.format(model_id)]
     obj_param=bop_io.get_model_params(model_param)
@@ -280,7 +285,7 @@ for m_id,model_id in enumerate(model_ids):
     recog_temp = recog.pix2pose(weight_fn,camK= cam_K,
                                 res_x=im_width,res_y=im_height,obj_param=obj_param,
                                 th_ransac=th_ransac,th_outlier=th_outlier,
-                                th_inlier=th_inlier)
+                                th_inlier=th_inlier,backbone=backbone)
     obj_pix2pose.append(recog_temp)    
     obj_names.append(model_id)
     ply_fn=model_plys[m_id]    

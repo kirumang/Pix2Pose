@@ -1,0 +1,22 @@
+DISPLAY=:0 python3 tools/3_train_pix2pose.py 0 cfg/cfg_bop2019.json ycbv 01 ~/media/hdd/datasets/coco2017/train2017/
+DISPLAY=:0 python3 tools/3_train_pix2pose.py 0 cfg/cfg_bop2019.json ycbv 02 ~/media/hdd/datasets/coco2017/train2017/
+DISPLAY=:0 python3 tools/3_train_pix2pose.py 0 cfg/cfg_bop2019.json ycbv 03 ~/media/hdd/datasets/coco2017/train2017/
+DISPLAY=:0 python3 tools/3_train_pix2pose.py 0 cfg/cfg_bop2019.json ycbv 04 ~/media/hdd/datasets/coco2017/train2017/
+DISPLAY=:0 python3 tools/3_train_pix2pose.py 0 cfg/cfg_bop2019.json ycbv 05 ~/media/hdd/datasets/coco2017/train2017/
+DISPLAY=:0 python3 tools/3_train_pix2pose.py 0 cfg/cfg_bop2019.json ycbv 06 ~/media/hdd/datasets/coco2017/train2017/
+DISPLAY=:0 python3 tools/3_train_pix2pose.py 0 cfg/cfg_bop2019.json ycbv 07 ~/media/hdd/datasets/coco2017/train2017/
+DISPLAY=:0 python3 tools/3_train_pix2pose.py 0 cfg/cfg_bop2019.json ycbv 08 ~/media/hdd/datasets/coco2017/train2017/
+DISPLAY=:0 python3 tools/3_train_pix2pose.py 0 cfg/cfg_bop2019.json ycbv 09 ~/media/hdd/datasets/coco2017/train2017/
+DISPLAY=:0 python3 tools/3_train_pix2pose.py 0 cfg/cfg_bop2019.json ycbv 10 ~/media/hdd/datasets/coco2017/train2017/
+DISPLAY=:0 python3 tools/3_train_pix2pose.py 0 cfg/cfg_bop2019.json ycbv 11 ~/media/hdd/datasets/coco2017/train2017/
+DISPLAY=:0 python3 tools/3_train_pix2pose.py 0 cfg/cfg_bop2019.json ycbv 12 ~/media/hdd/datasets/coco2017/train2017/
+DISPLAY=:0 python3 tools/3_train_pix2pose.py 0 cfg/cfg_bop2019.json ycbv 13 ~/media/hdd/datasets/coco2017/train2017/
+DISPLAY=:0 python3 tools/3_train_pix2pose.py 0 cfg/cfg_bop2019.json ycbv 14 ~/media/hdd/datasets/coco2017/train2017/
+DISPLAY=:0 python3 tools/3_train_pix2pose.py 0 cfg/cfg_bop2019.json ycbv 15 ~/media/hdd/datasets/coco2017/train2017/
+DISPLAY=:0 python3 tools/3_train_pix2pose.py 0 cfg/cfg_bop2019.json ycbv 16 ~/media/hdd/datasets/coco2017/train2017/
+DISPLAY=:0 python3 tools/3_train_pix2pose.py 0 cfg/cfg_bop2019.json ycbv 17 ~/media/hdd/datasets/coco2017/train2017/
+DISPLAY=:0 python3 tools/3_train_pix2pose.py 0 cfg/cfg_bop2019.json ycbv 18 ~/media/hdd/datasets/coco2017/train2017/
+DISPLAY=:0 python3 tools/3_train_pix2pose.py 0 cfg/cfg_bop2019.json ycbv 19 ~/media/hdd/datasets/coco2017/train2017/
+DISPLAY=:0 python3 tools/3_train_pix2pose.py 0 cfg/cfg_bop2019.json ycbv 20 ~/media/hdd/datasets/coco2017/train2017/
+DISPLAY=:0 python3 tools/3_train_pix2pose.py 0 cfg/cfg_bop2019.json ycbv 21 ~/media/hdd/datasets/coco2017/train2017/
+ 

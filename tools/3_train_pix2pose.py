@@ -131,23 +131,35 @@ recont_l = ae.transformer_loss(sym_pool)([gen_img,dcgan_target,prob,prob_gt])
 discriminator.trainable = False
 disc_out = discriminator(gen_img)
 dcgan = Model(inputs=[dcgan_input,dcgan_target,prob_gt],outputs=[recont_l,disc_out])
+
 epoch=0
 recent_epoch=-1
 
 if load_recent_weight:
-    weight_fn=""
+    weight_save_gen=""
+    weight_save_disc=""
     for fn_temp in sorted(os.listdir(weight_dir)):
         if(fn_temp.startswith(weight_prefix+".")):
                     temp_split  = fn_temp.split(".")
-                    epoch_split = temp_split[1].split("-")
-                    epoch_split2= epoch_split[0].split("_")
+                    epoch_split = temp_split[1].split("-") #"01_real_1.0-0.1752.hdf5"
+                    epoch_split2= epoch_split[0].split("_") #01_real_1.0
                     epoch_temp = int(epoch_split2[0])
-                    if(epoch_temp>recent_epoch):
+                    network_part = epoch_split2[1]
+                    if(epoch_temp>=recent_epoch):
                         recent_epoch = epoch_temp
-                        weight_fn = fn_temp
-    if(weight_fn!=""):
-        print("load recent weights from", weight_dir+"/"+weight_fn)
-        dcgan.load_weights(weight_dir+"/"+weight_fn)
+                        if(network_part=="gen"):                        
+                            weight_save_gen = fn_temp
+                        elif(network_part=="disc"):
+                            weight_save_disc = fn_temp
+
+    if(weight_save_gen!=""):
+        print("load recent weights from", weight_dir+"/"+weight_save_gen)
+        generator_train.load_weights(os.path.join(weight_dir,weight_save_gen))
+    
+    if(weight_save_disc!=""):
+        print("load recent weights from", weight_dir+"/"+weight_save_disc)
+        discriminator.load_weights(os.path.join(weight_dir,weight_save_disc))
+   
 
 if(recent_epoch!=-1):
     epoch = recent_epoch
@@ -231,8 +243,11 @@ for X_src,X_tgt,disc_tgt,prob_gt in iter_:
             print("loss was not improved")
             print(weight_dir+"/"+weight_prefix+".{:02d}-{:.4f}.hdf5".format(epoch,mean_loss))
 
-        weight_save = weight_dir+"/" + weight_prefix+".{:02d}_real_{:.1f}-{:.4f}.hdf5".format(epoch,real_ratio,mean_loss)
-        dcgan.save_weights(weight_save)
+        weight_save_gen = weight_dir+"/" + weight_prefix+".{:02d}_gen_{:.1f}-{:.4f}.hdf5".format(epoch,real_ratio,mean_loss)
+        weight_save_disc = weight_dir+"/" + weight_prefix+".{:02d}_disc_{:.1f}-{:.4f}.hdf5".format(epoch,real_ratio,mean_loss)
+        generator_train.save_weights(weight_save_gen)
+        discriminator.save_weights(weight_save_disc)
+        
         gen_images,probs = generator_train.predict(X_src)
 
         imgfn = weight_dir+"/val_img/"+weight_prefix+"_{:02d}.png".format(epoch)
@@ -255,3 +270,6 @@ for X_src,X_tgt,disc_tgt,prob_gt in iter_:
     if(epoch>max_epoch): 
         print("Train finished")
         break
+
+generator_train.save_weights("inference.hdf5")
+discriminator.save_weights("disc_final.hdf5")

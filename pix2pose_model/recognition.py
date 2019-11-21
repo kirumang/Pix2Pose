@@ -6,7 +6,7 @@ import cv2
 from skimage.transform import resize
 
 class pix2pose():
-    def __init__(self,weight_fn,camK,res_x,res_y,obj_param,th_ransac=3.0,th_outlier=[0.1,0.2,0.3],th_inlier=0.1,box_size=1.5,dist_coeff=None,**kwargs):
+    def __init__(self,weight_fn,camK,res_x,res_y,obj_param,th_ransac=3.0,th_outlier=[0.1,0.2,0.3],th_inlier=0.1,box_size=1.5,dist_coeff=None,backbone="paper",**kwargs):
         self.camK=camK
         self.res_x= res_x
         self.res_y = res_y
@@ -17,7 +17,11 @@ class pix2pose():
         self.obj_ct = obj_param[3:] #x,y,z
         self.box_size= box_size
         self.dist_coeff = dist_coeff
-        self.generator_train = ae.aemodel_unet_prob(p=1.0) #output:3gae
+        if(backbone=='paper'):
+            self.generator_train = ae.aemodel_unet_prob(p=1.0) #output:3gae
+        elif(backbone=='resnet50'):
+            self.generator_train = ae.aemodel_unet_resnet50(p=1.0)
+    
         self.generator_train.load_weights(weight_fn)
     
     def get_boxes(self,bbox,v_max,u_max,ct=np.array([-1]),max_w=9999):
