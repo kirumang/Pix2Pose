@@ -107,9 +107,9 @@ task_type = cfg["task_type"]
 #2-ViVo task (2019 BOP challenge format, take the top-n instances)
 cand_factor =float(cfg['cand_factor'])
 
-config = tf.ConfigProto()
-config.gpu_options.allow_growth = True
-sess = tf.Session(config=config)
+config_tf = tf.ConfigProto()
+config_tf.gpu_options.allow_growth = True
+sess = tf.Session(config=config_tf)
 
 dataset=sys.argv[3]
 vis=False
