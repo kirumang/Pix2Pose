@@ -2,6 +2,8 @@ import os,sys
 from math import radians
 import csv
 import cv2
+from skimage.transform import resize
+
 from matplotlib import pyplot as plt
 import time
 import random
@@ -51,12 +53,26 @@ if detect_type=='rcnn':
         results = model.detect([image_t_resized], verbose=0)
         r = results[0]
         rois = r['rois']
+        if(scale!=1):
+            masks_all = r['masks'][window[0]:window[2],window[1]:window[3],:]
+            masks = np.zeros((image_t.shape[0],image_t.shape[1],masks_all.shape[2]),bool)
+            for mask_id in range(masks_all.shape[2]):
+                masks[:,:,mask_id]=resize(masks_all[:,:,mask_id].astype(np.float),(image_t.shape[0],image_t.shape[1]))>0.5
+            #resize all the masks            
+            rois=rois/scale
+            window = np.array(window)
+            window[0] = window[0]/scale
+            window[1] = window[1]/scale
+            window[2] = window[2]/scale
+            window[3] = window[3]/scale     
+        else:
+            masks = r['masks'][window[0]:window[2],window[1]:window[3],:]
+
         rois = rois - [window[0],window[1],window[0],window[1]]
         obj_orders = np.array(r['class_ids'])-1
         obj_ids = model_ids[obj_orders] 
         #now c_ids are the same annotation those of the names of ply/gt files
-        scores = np.array(r['scores'])
-        masks = r['masks'][window[0]:window[2],window[1]:window[3],:]
+        scores = np.array(r['scores'])        
         return rois,obj_orders,obj_ids,scores,masks
 
 elif detect_type=='retinanet':
