@@ -71,8 +71,8 @@ class pix2pose():
         image_no_mask_zero = np.copy(rgb[v1:v2,u1:u2]).astype(np.float32)
         image_no_mask_zero = (image_no_mask_zero-[128,128,128])/128
         if(base_image.shape[0]<5 or base_image.shape[1]<5 or image_no_mask_zero.shape[0]<5 or image_no_mask_zero.shape[1]<5):
-            return np.zeros((1)),np.zeros((1)),0,0,np.array([v1,v2,u1,u2],np.int)
-
+            return np.zeros((1)),-1,-1,-1,-1,np.array([v1,v2,u1,u2],np.int)
+            
         base_image[vv1:vv2,uu1:uu2] = image_no_mask_zero
         input_img=resize(base_image,(128,128),order=1,mode='reflect')
 
