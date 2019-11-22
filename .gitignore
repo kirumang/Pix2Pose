@@ -8,3 +8,5 @@ pix2pose_util/__pycache__/
 rendering/__pycache__/
 
 tools/__pycache__/
+
+cfg/cfg_bop2019_kiru\.json
