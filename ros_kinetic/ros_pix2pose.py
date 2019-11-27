@@ -64,6 +64,10 @@ class pix2pose():
         self.im_height = int(cfg['im_height'])
         self.inlier_th = float(cfg['inlier_th'])
         self.ransac_th = float(cfg['ransac_th'])
+        self.backbone='paper'
+        if('backbone' in cfg.keys()):
+            self.backbone = cfg['backbone']
+
         self.pub_before_icp=False
         self.graph = tf_backend.Graph()
         if(int(cfg['icp'])==1):
@@ -99,14 +103,17 @@ class pix2pose():
             pix2pose_dir = cfg['path_to_pix2pose_weights']
             th_outlier = cfg['outlier_th']
             self.model_scale = cfg['model_scale']
-            for t_id,target_obj in enumerate(self.target_objs):
-                weight_fn = os.path.join(pix2pose_dir,"{:02d}/inference.hdf5".format(target_obj))
+            for t_id,target_obj in enumerate(self.target_objs):                
+                if(self.backbone=='resnet50'):
+                    weight_fn = os.path.join(pix2pose_dir,"{:02d}/inference_resnet50.hdf5".format(target_obj))
+                else:
+                    weight_fn = os.path.join(pix2pose_dir,"{:02d}/inference.hdf5".format(target_obj))
                 print("Load pix2pose weights from ",weight_fn)
                 model_param = self.model_params['{}'.format(target_obj)]
-                obj_param=bop_io.get_model_params(model_param)
+                obj_param=bop_io.get_model_params(model_param)                
                 recog_temp = recog.pix2pose(weight_fn,camK= self.camK,
                                         res_x=self.im_width,res_y=self.im_height,obj_param=obj_param,
-                                        th_ransac=self.ransac_th,th_outlier=th_outlier,th_inlier=self.inlier_th)
+                                        th_ransac=self.ransac_th,th_outlier=th_outlier,th_inlier=self.inlier_th,backbone=self.backbone)
                 self.obj_pix2pose.append(recog_temp)
                 ply_fn = os.path.join(self.cfg['model_dir'],self.cfg['ply_files'][t_id])               
                 if(self.icp):
