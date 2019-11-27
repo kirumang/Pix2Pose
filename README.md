@@ -4,9 +4,9 @@ Original implementation of the paper, Kiru Park, Timothy Patten and Markus Vincz
 # Notice
 The Resnet-50 backbone, which can be initialized with weights for ImageNet, is supported instead of the original encoder network, which performs better (in terms of accuracy).
 
-For the YCB-Video dataset, the improvement looks like this. 
-- RGB only (BOP recall: 0.284 -> 0.428, +51%): the best result among RGB only methods in the last BOP challenge results.
-- RGB with ICP on depth (BOP recall: 0.668 -> 0.742, +11%): The best result again. 
+For the YCB-Video dataset, the improvements are (in terms of the BOP score):
+- RGB only (0.284 -> **0.428**, +51%): the best result among RGB only methods in the last BOP challenge results.
+- RGB with ICP on depth (0.668 -> **0.742**, +11%): The best result again. 
 
 You can download the weights for the YCB-Video dataset using Resnet-50 [here](https://drive.google.com/open?id=1ZXO1wpLXz5jdz2NVnENDIRM3W_Q3Y5s4)
 
