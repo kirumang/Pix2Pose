@@ -1,5 +1,5 @@
 {
-  "backbone":"resnet50",
+  "backbone":"paper",
   "dataset_dir": "/home/kiru/media/hdd/bop",
   "dataset_names": ["hb","lmo","ycbv","tless","itodd","tudl","icbin"],
   "detection_pipeline": "rcnn",
