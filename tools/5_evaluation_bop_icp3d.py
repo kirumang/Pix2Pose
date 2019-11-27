@@ -7,7 +7,6 @@ import time
 import random
 import numpy as np
 import transforms3d as tf3d
-from skimage.transform import resize 
 
 ROOT_DIR = os.path.abspath(".")
 sys.path.append(ROOT_DIR)  # To find local version of the library
@@ -108,28 +107,17 @@ if detect_type=='rcnn':
                         min_scale=config.IMAGE_MIN_SCALE,
                         max_dim=config.IMAGE_MAX_DIM,
                         mode=config.IMAGE_RESIZE_MODE)
+        if(scale!=1):
+            print("Warning.. have to adjust the scale")        
         results = model.detect([image_t_resized], verbose=0)
         r = results[0]
         rois = r['rois']
-        if(scale!=1): 
-            masks_all = r['masks'][window[0]:window[2],window[1]:window[3],:] 
-            masks = np.zeros((image_t.shape[0],image_t.shape[1],masks_all.shape[2]),bool) 
-            for mask_id in range(masks_all.shape[2]): 
-                masks[:,:,mask_id]=resize(masks_all[:,:,mask_id].astype(np.float),(image_t.shape[0],image_t.shape[1]))>0.5 
-            #resize all the masks             
-            rois=rois/scale 
-            window = np.array(window) 
-            window[0] = window[0]/scale 
-            window[1] = window[1]/scale 
-            window[2] = window[2]/scale 
-            window[3] = window[3]/scale      
-        else: 
-            masks = r['masks'][window[0]:window[2],window[1]:window[3],:] 
         rois = rois - [window[0],window[1],window[0],window[1]]
         obj_orders = np.array(r['class_ids'])-1
         obj_ids = model_ids[obj_orders] 
         #now c_ids are the same annotation those of the names of ply/gt files
         scores = np.array(r['scores'])
+        masks = r['masks'][window[0]:window[2],window[1]:window[3],:]
         return rois,obj_orders,obj_ids,scores,masks
 
 elif detect_type=='retinanet':
@@ -279,14 +267,20 @@ obj_pix2pose=[]
 obj_names=[]
 obj_models=[]
 image_dummy=np.zeros((im_height,im_width,3),np.uint8)
-
+if( 'backbone' in cfg.keys()):
+    backbone = cfg['backbone']
+else:
+    backbone = 'paper'
 
 for m_id,model_id in enumerate(model_ids):
     model_param = model_params['{}'.format(model_id)]
     obj_param=bop_io.get_model_params(model_param)
     weight_dir = bop_dir+"/pix2pose_weights/{:02d}".format(model_id)
     #weight_dir = "/home/kiru/media/hdd/weights/tless/tless_{:02d}".format(model_id)
-    weight_fn = os.path.join(weight_dir,"inference.hdf5")
+    if(backbone=='resnet50'):
+        weight_fn = os.path.join(weight_dir,"inference_resnet50.hdf5")
+    else:
+        weight_fn = os.path.join(weight_dir,"inference.hdf5")
     print("load pix2pose weight for obj_{} from".format(model_id),weight_fn)
     if not(dynamic_th):
         th_outlier = [th_outliers[m_id]] #provid a fixed outlier value
@@ -294,7 +288,7 @@ for m_id,model_id in enumerate(model_ids):
     recog_temp = recog.pix2pose(weight_fn,camK= cam_K,
                                 res_x=im_width,res_y=im_height,obj_param=obj_param,
                                 th_ransac=th_ransac,th_outlier=th_outlier,
-                                th_inlier=th_inlier)
+                                th_inlier=th_inlier,backbone=backbone)
     obj_pix2pose.append(recog_temp)    
     obj_names.append(model_id)
     ply_fn=model_plys[m_id]    
