@@ -105,7 +105,7 @@ class pix2pose():
             self.model_scale = cfg['model_scale']
             for t_id,target_obj in enumerate(self.target_objs):                
                 if(self.backbone=='resnet50'):
-                    weight_fn = os.path.join(pix2pose_dir,"{:02d}/inference_resnet50.hdf5".format(target_obj))
+                    weight_fn = os.path.join(pix2pose_dir,"{:02d}/inference_resnet_model.hdf5".format(target_obj))
                 else:
                     weight_fn = os.path.join(pix2pose_dir,"{:02d}/inference.hdf5".format(target_obj))
                 print("Load pix2pose weights from ",weight_fn)

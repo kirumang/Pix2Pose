@@ -1,7 +1,10 @@
 
+"""
+This code is copied and modified from this repository 
+https://github.com/keras-team/keras-applications
 
 
-"""ResNet50 model for Keras.
+ResNet50 model for Keras.
 # Modified from a model in https://github.com/fchollet/deep-learning-models
 # Reference:
 - [Deep Residual Learning for Image Recognition](https://arxiv.org/abs/1512.03385)

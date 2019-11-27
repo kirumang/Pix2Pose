@@ -273,6 +273,5 @@ for X_src,X_tgt,disc_tgt,prob_gt in iter_:
         if(backbone=='paper'):
             generator_train.save_weights(os.path.join(weight_dir,"inference.hdf5"))        
         else:
-            generator_train.save_weights(os.path.join(weight_dir,"inference_resnet50.hdf5"))        
+            generator_train.save(os.path.join(weight_dir,"inference_resnet_model.hdf5"))        
         break
-

@@ -4,6 +4,7 @@ from keras import backend as K
 import numpy as np
 import cv2
 from skimage.transform import resize
+from keras.models import load_model
 
 class pix2pose():
     def __init__(self,weight_fn,camK,res_x,res_y,obj_param,th_ransac=3.0,th_outlier=[0.1,0.2,0.3],th_inlier=0.1,box_size=1.5,dist_coeff=None,backbone="paper",**kwargs):
@@ -19,11 +20,11 @@ class pix2pose():
         self.dist_coeff = dist_coeff
         if(backbone=='paper'):
             self.generator_train = ae.aemodel_unet_prob(p=1.0) #output:3gae
+            self.generator_train.load_weights(weight_fn)
         elif(backbone=='resnet50'):
-            self.generator_train = ae.aemodel_unet_resnet50(p=1.0)
-    
-        self.generator_train.load_weights(weight_fn)
-    
+            self.generator_train = load_model(weight_fn)        
+        
+
     def get_boxes(self,bbox,v_max,u_max,ct=np.array([-1]),max_w=9999):
         if(ct[0]==-1):
             bbox_ct_v =int((bbox[0]+bbox[2])/2)
