@@ -1,6 +1,17 @@
 # Pix2Pose
 Original implementation of the paper, Kiru Park, Timothy Patten and Markus Vincze, "Pix2Pose: Pix2Pose: Pixel-Wise Coordinate Regression of Objects for 6D Pose Estimation", ICCV 2019, https://arxiv.org/abs/1908.07433
 
+# Notice
+The Resnet-50 backbone, which can be initialized with weights for ImageNet, is supported instead of the original encoder network, which performs better (in terms of accuracy).
+
+For the YCB-Video dataset, the improvement looks like this. 
+- RGB only (BOP recall: 0.284 -> 0.428, +51%): the best result among RGB only methods in the last BOP challenge results.
+- RGB with ICP on depth (BOP recall: 0.668 -> 0.742, +11%): The best result again. 
+
+You can download the weights for the YCB-Video dataset using Resnet-50 [here](https://drive.google.com/open?id=1PKiy_z8cPzi4fhdYlWyIFnnG7BYqYmzn) 
+To use the resnet-50 backbone, add "backbone":"resnet50" in the config json file. (e.g., cfg/cfg_bop_2019.json or ros_config.json). Please make sure the repository is up-to-date.
+
+
 ### Requirements:
 * Tested environment: Ubuntu 16.04 (64bit)
 * Python > 3.5
