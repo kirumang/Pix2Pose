@@ -207,23 +207,7 @@ for m_id,model_id in enumerate(model_ids):
     weight_dir = bop_dir+"/pix2pose_weights/{:02d}".format(model_id)
     #weight_dir = "/home/kiru/media/hdd/weights/tless/tless_{:02d}".format(model_id)
     if(backbone=='resnet50'):
-        weight_save_gen=""
-        weight_save_disc=""
-        recent_epoch=-1
-        for fn_temp in sorted(os.listdir(weight_dir)):
-            if(fn_temp.startswith(weight_prefix+".")):
-                        temp_split  = fn_temp.split(".")
-                        epoch_split = temp_split[1].split("-") #"01_real_1.0-0.1752.hdf5"
-                        epoch_split2= epoch_split[0].split("_") #01_real_1.0
-                        epoch_temp = int(epoch_split2[0])
-                        network_part = epoch_split2[1]
-                        if(epoch_temp>=recent_epoch):
-                            recent_epoch = epoch_temp
-                            if(network_part=="gen"):                        
-                                weight_save_gen = fn_temp
-                            elif(network_part=="disc"):
-                                weight_save_disc = fn_temp
-        weight_fn = os.path.join(weight_dir,weight_save_gen)
+        weight_fn = os.path.join(weight_dir,"inference_resnet50.hdf5")
     else:
         weight_fn = os.path.join(weight_dir,"inference.hdf5")
     print("load pix2pose weight for obj_{} from".format(model_id),weight_fn)

@@ -112,14 +112,15 @@ if('symmetries_continuous' in keys):
 
 optimizer_dcgan =Adam(lr=1E-4, beta_1=0.9, beta_2=0.999, epsilon=1e-08) 
 optimizer_disc = Adam(lr=1E-4, beta_1=0.9, beta_2=0.999, epsilon=1e-08) 
-
+backbone='paper'
 if('backbone' in cfg.keys()):
     if(cfg['backbone']=="resnet50"):
-        generator_train = ae.aemodel_unet_resnet50(p=1.0)
-    else:
-        generator_train = ae.aemodel_unet_prob(p=1.0)
+            backbone='resnet50'
+if(backbone=='resnet50'):
+    generator_train = ae.aemodel_unet_resnet50(p=1.0)
 else:
     generator_train = ae.aemodel_unet_prob(p=1.0)
+    
 
 discriminator = ae.DCGAN_discriminator()
 imsize=128
@@ -269,7 +270,9 @@ for X_src,X_tgt,disc_tgt,prob_gt in iter_:
     batch_counter+=1
     if(epoch>max_epoch): 
         print("Train finished")
+        if(backbone=='paper'):
+            generator_train.save_weights(os.path.join(weight_dir,"inference.hdf5"))        
+        else:
+            generator_train.save_weights(os.path.join(weight_dir,"inference_resnet50.hdf5"))        
         break
 
-generator_train.save_weights("inference.hdf5")
-discriminator.save_weights("disc_final.hdf5")

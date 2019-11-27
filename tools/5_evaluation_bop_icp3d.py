@@ -277,7 +277,10 @@ for m_id,model_id in enumerate(model_ids):
     obj_param=bop_io.get_model_params(model_param)
     weight_dir = bop_dir+"/pix2pose_weights/{:02d}".format(model_id)
     #weight_dir = "/home/kiru/media/hdd/weights/tless/tless_{:02d}".format(model_id)
-    weight_fn = os.path.join(weight_dir,"inference.hdf5")
+    if(backbone=='resnet50'):
+        weight_fn = os.path.join(weight_dir,"inference_resnet50.hdf5")
+    else:
+        weight_fn = os.path.join(weight_dir,"inference.hdf5")
     print("load pix2pose weight for obj_{} from".format(model_id),weight_fn)
     if not(dynamic_th):
         th_outlier = [th_outliers[m_id]] #provid a fixed outlier value
