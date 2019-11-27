@@ -8,7 +8,7 @@ For the YCB-Video dataset, the improvement looks like this.
 - RGB only (BOP recall: 0.284 -> 0.428, +51%): the best result among RGB only methods in the last BOP challenge results.
 - RGB with ICP on depth (BOP recall: 0.668 -> 0.742, +11%): The best result again. 
 
-You can download the weights for the YCB-Video dataset using Resnet-50 [here](https://drive.google.com/open?id=1PKiy_z8cPzi4fhdYlWyIFnnG7BYqYmzn) 
+You can download the weights for the YCB-Video dataset using Resnet-50 [here](https://drive.google.com/open?id=1ZXO1wpLXz5jdz2NVnENDIRM3W_Q3Y5s4)
 To use the resnet-50 backbone, add "backbone":"resnet50" in the config json file. (e.g., cfg/cfg_bop_2019.json or ros_config.json). Please make sure the repository is up-to-date.
 
 
@@ -192,7 +192,9 @@ e.g., for hb, the extracted files should placed in
 - [path to bop dataset]/tless/pix2pose_weights/[obj_no]
 
 * T-Less: [2D Mask R-CNN Detection + Pix2Pose weights](https://drive.google.com/open?id=1-0fsXuwTYSOlCaPeePgDY-IAuMxRjcOG)
-* YCBV: [2D Mask R-CNN Detection + Pix2Pose weights](https://drive.google.com/open?id=1FW6wxkPw64j_NsBnc5g4HkwPlfRFefbN)
+* YCBV (paper backbone): [2D Mask R-CNN Detection + Pix2Pose weights](https://drive.google.com/open?id=1FW6wxkPw64j_NsBnc5g4HkwPlfRFefbN)
+* YCBV (Resnet50 backbone, better performance): [2D Mask R-CNN Detection + Pix2Pose weights](https://drive.google.com/open?id=1ZXO1wpLXz5jdz2NVnENDIRM3W_Q3Y5s4)
+
 * ICBIN: [2D Mask R-CNN Detection + Pix2Pose weights](https://drive.google.com/open?id=1c7KvBs0xcPcQgvmRxwyYbdBzh9a-Vt30)
 * TUDL: [2D Mask R-CNN Detection + Pix2Pose weights](https://drive.google.com/open?id=1N4Yetze3iSyVmVOTwGfVI6CHgZX_RFA3)
 * HB: [2D Mask R-CNN Detection + Pix2Pose weights](https://drive.google.com/open?id=1PpReSRHMQ4z0-BUpffrBF61d-PSAH3w6)
