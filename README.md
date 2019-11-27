@@ -10,7 +10,11 @@ For the YCB-Video dataset, the improvement looks like this.
 
 You can download the weights for the YCB-Video dataset using Resnet-50 [here](https://drive.google.com/open?id=1ZXO1wpLXz5jdz2NVnENDIRM3W_Q3Y5s4)
 
-To use the resnet-50 backbone, add "backbone":"resnet50" in the config json file. (e.g., cfg/cfg_bop_2019.json or ros_config.json). Please make sure the repository is up-to-date.
+To use the resnet-50 backbone, add
+```
+"backbone":"resnet50"
+```
+in the config json file. (e.g., cfg/cfg_bop_2019.json or ros_config.json). Please make sure the repository is up-to-date.
 
 
 ### Requirements:
