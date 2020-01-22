@@ -223,7 +223,8 @@ for m_id,model_id in enumerate(model_ids):
     weight_dir = bop_dir+"/pix2pose_weights/{:02d}".format(model_id)
     #weight_dir = "/home/kiru/media/hdd/weights/tless/tless_{:02d}".format(model_id)
     if(backbone=='resnet50'):
-        weight_fn = os.path.join(weight_dir,"inference_resnet_model.hdf5")
+        #weight_fn = os.path.join(weight_dir,"inference_resnet_model.hdf5")
+        weight_fn = os.path.join(weight_dir,"inference_resnet50.hdf5")
     else:
         weight_fn = os.path.join(weight_dir,"inference.hdf5")
     print("load pix2pose weight for obj_{} from".format(model_id),weight_fn)

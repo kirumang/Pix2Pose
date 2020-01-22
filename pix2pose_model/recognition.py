@@ -22,8 +22,8 @@ class pix2pose():
             self.generator_train = ae.aemodel_unet_prob(p=1.0) #output:3gae
             self.generator_train.load_weights(weight_fn)
         elif(backbone=='resnet50'):
-            self.generator_train = load_model(weight_fn)        
-        
+            self.generator_train = ae.aemodel_unet_resnet50(p=1.0)
+            self.generator_train.load_weights(weight_fn)            
 
     def get_boxes(self,bbox,v_max,u_max,ct=np.array([-1]),max_w=9999):
         if(ct[0]==-1):

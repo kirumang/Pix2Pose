@@ -8,7 +8,7 @@ For the YCB-Video dataset, the improvements are (in terms of the BOP score):
 - RGB only (0.284 -> **0.428**, +51%): the best result among RGB only methods in the last BOP challenge results.
 - RGB with ICP on depth (0.668 -> **0.742**, +11%): The best result again. 
 
-You can download the weights for the YCB-Video dataset using Resnet-50 [here](https://drive.google.com/open?id=1ZXO1wpLXz5jdz2NVnENDIRM3W_Q3Y5s4)
+You can download the weights for the YCB-Video dataset using Resnet-50 [here](https://drive.google.com/open?id=1au-jcTNQVZNV8aEpuTsMb68IZoVruEN8)
 
 To use the resnet-50 backbone, add
 ```
