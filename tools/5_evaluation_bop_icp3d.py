@@ -12,6 +12,7 @@ ROOT_DIR = os.path.abspath(".")
 sys.path.append(ROOT_DIR)  # To find local version of the library
 sys.path.append("./bop_toolkit")
 
+
 if(len(sys.argv)!=4):
     print("python3 tools/5_evaluation_bop_basic.py [gpu_id] [cfg file] [dataset_name]")
     sys.exit()
@@ -54,8 +55,9 @@ def render_obj_gpu(obj_m,rot,tra,cam_K,ren):
     ren.set_cam(cam_K)
     depth,mask,bbox = ren.render_obj(obj_m,rot,tra)    
     return depth,depth
-def icp_refinement(pts_tgt,obj_model,rot_pred,tra_pred,cam_K,ren):
+def icp_refinement(pts_tgt,obj_model,rot_pred,tra_pred,cam_K,ren,union_mask):
     centroid_tgt = np.array([np.mean(pts_tgt[:,0]),np.mean(pts_tgt[:,1]),np.mean(pts_tgt[:,2])])
+    #centroid_tgt = np.array([np.median(pts_tgt[:,0]),np.median(pts_tgt[:,1]),np.median(pts_tgt[:,2])])
     if(tra_pred[2]<300 or tra_pred[2]>5000): 
         tra_pred = centroid_tgt*1000            
     
@@ -64,10 +66,11 @@ def icp_refinement(pts_tgt,obj_model,rot_pred,tra_pred,cam_K,ren):
         img_init,depth_init = render_obj_gpu(obj_model,rot_pred,tra_pred/1000,cam_K,ren)
     else:
         img_init,depth_init = render_obj(obj_models[obj_order_id],rot_pred,tra_pred/1000,cam_K,ren)
-    init_mask = depth_init>0
+    init_mask = np.logical_and(depth_init>0,union_mask)
+    #init_mask = depth_init>0
     bbox_init = get_bbox_from_mask(init_mask>0)    
     tf =np.eye(4)    
-    if(bbox_init[2]-bbox_init[0] < 10 or bbox_init[3]-bbox_init[1] < 10): 
+    if(bbox_init[2]-bbox_init[0] < 5 or bbox_init[3]-bbox_init[1] < 5): 
         return tf,-1
     if(np.sum(init_mask)<10):
         return tf,-1
@@ -75,14 +78,34 @@ def icp_refinement(pts_tgt,obj_model,rot_pred,tra_pred,cam_K,ren):
     points_src[:,:,:3] = getXYZ(depth_init,cam_K[0,0],cam_K[1,1],cam_K[0,2],cam_K[1,2],bbox_init)
     points_src[:,:,3:] = get_normal(depth_init,fx=cam_K[0,0],fy=cam_K[1,1],cx=cam_K[0,2],cy=cam_K[1,2],refine=True,bbox=bbox_init)
     points_src = points_src[init_mask[bbox_init[0]:bbox_init[2],bbox_init[1]:bbox_init[3]]>0]
-
+    
     #adjust the initial translation using centroids of visible points
-    centroid_src = np.array([np.mean(points_src[:,0]),np.mean(points_src[:,1]),np.mean(points_src[:,2])])
+    centroid_src = np.array([np.mean(points_src[:,0]),np.mean(points_src[:,1]),np.mean(points_src[:,2])])    
     trans_adjust = centroid_tgt - centroid_src
+    
+    new_z = tra_pred[2]+trans_adjust[2]*1000
+    new_x = tra_pred[0]*(new_z/tra_pred[2])
+    new_y = tra_pred[1]*(new_z/tra_pred[2])
+    new_trans = np.array([new_x,new_y,new_z])
+    trans_adjust = (new_trans - tra_pred)/1000
+    
     tra_pred = tra_pred +trans_adjust*1000
+    
+    #x_new= x1*(z_new/z1)
     points_src[:,:3]+=trans_adjust
+    
+    #const int iterations,
+    #const float tolerence = 0.05f,
+    #const float rejectionScale = 2.5f,
+    #const int numLevels = 6,
+    #const int sampleType = ICP::ICP_SAMPLING_TYPE_UNIFORM,
+    #const int numMaxCorr = 1 
 
-    icp_fnc = cv2.ppf_match_3d_ICP(100,tolerence=0.05,numLevels=4) #1cm
+    #icp_fnc = cv2.ppf_match_3d_ICP(100,tolerence=0.05,numLevels=4) #1cm #last thing to try
+    
+    #100,0.05,2.5,4
+    #100,0.005,2.5,2
+    icp_fnc = cv2.ppf_match_3d_ICP(100,tolerence=0.005,rejectionScale=2.5,numLevels=2) #1cm #last thing to try
     retval, residual, pose=icp_fnc.registerModelToScene(points_src.reshape(-1,6), pts_tgt.reshape(-1,6))    
     
     tf[:3,:3]=rot_pred
@@ -100,19 +123,19 @@ if detect_type=='rcnn':
     from mrcnn import utils
     import mrcnn.model as modellib
     from tools.mask_rcnn_util import BopInferenceConfig
+    from skimage.transform import resize
     def get_rcnn_detection(image_t,model):
         image_t_resized, window, scale, padding, crop = utils.resize_image(
                         np.copy(image_t),
-                        min_dim=config.IMAGE_MIN_DIM,
-                        min_scale=config.IMAGE_MIN_SCALE,
-                        max_dim=config.IMAGE_MAX_DIM,
-                        mode=config.IMAGE_RESIZE_MODE)
-        if(scale!=1):
-            print("Warning.. have to adjust the scale")        
+                        min_dim=BopInferenceConfig.IMAGE_MIN_DIM,
+                        min_scale=BopInferenceConfig.IMAGE_MIN_SCALE,
+                        max_dim=BopInferenceConfig.IMAGE_MAX_DIM,
+                        mode=BopInferenceConfig.IMAGE_RESIZE_MODE)
         results = model.detect([image_t_resized], verbose=0)
         r = results[0]
         rois = r['rois']
         rois = rois - [window[0],window[1],window[0],window[1]]
+        rois = (rois/scale).astype(np.int)
         obj_orders = np.array(r['class_ids'])-1
         obj_ids = model_ids[obj_orders] 
         #now c_ids are the same annotation those of the names of ply/gt files
@@ -163,7 +186,7 @@ score_type = cfg["score_type"]
 #1-scores from a 2D detetion pipeline is used (used for the paper)
 #2-scores are caluclated using detection score+overlapped mask (only supported for Mask RCNN, sued for the BOP challenge)
 
-task_type = cfg["task_type"]
+task_type =int(cfg["task_type"])
 #1-Output all results for target object in the given scene
 #2-ViVo task (2019 BOP challenge format, take the top-n instances)
 cand_factor =float(cfg['cand_factor'])
@@ -266,6 +289,8 @@ load_partial=False
 obj_pix2pose=[]
 obj_names=[]
 obj_models=[]
+obj_diameter=[]
+
 image_dummy=np.zeros((im_height,im_width,3),np.uint8)
 if( 'backbone' in cfg.keys()):
     backbone = cfg['backbone']
@@ -278,8 +303,9 @@ for m_id,model_id in enumerate(model_ids):
     weight_dir = bop_dir+"/pix2pose_weights/{:02d}".format(model_id)
     #weight_dir = "/home/kiru/media/hdd/weights/tless/tless_{:02d}".format(model_id)
     if(backbone=='resnet50'):
-        #weight_fn = os.path.join(weight_dir,"inference_resnet_model.hdf5")
-        weight_fn = os.path.join(weight_dir,"inference_resnet50.hdf5")
+        weight_fn = os.path.join(weight_dir,"inference_resnet_model.hdf5")
+        if not (os.path.exists(weight_fn)):
+           weight_fn = os.path.join(weight_dir,"inference_resnet50.hdf5")
     else:
         weight_fn = os.path.join(weight_dir,"inference.hdf5")
     print("load pix2pose weight for obj_{} from".format(model_id),weight_fn)
@@ -300,11 +326,14 @@ for m_id,model_id in enumerate(model_ids):
         obj_model = Model3D()
         obj_model.load(ply_fn,scale=0.001)#mm to m scale
     obj_models.append(obj_model)
-
+    scales = obj_param[:3]/1000
+    obj_dia = np.sqrt(scales[0]**2+scales[1]**2+scales[2]**2)
+    obj_diameter.append(obj_dia)
 
 test_target_fn = cfg['test_target']
 target_list = bop_io.get_target_list(os.path.join(bop_dir,test_target_fn+".json"))
-
+def fcn(diff_depth):
+    return np.sum(np.maximum(0,0.02-diff_depth)/0.02)
 prev_sid=-1
 result_dataset=[]
 
@@ -346,18 +375,26 @@ for scene_id,im_id,obj_id_targets,inst_counts in target_list:
         rgb_path = test_dir+"/{:06d}/".format(scene_id)+img_type+\
                         "/{:06d}.png".format(im_id)
         image_t = inout.load_im(rgb_path)        
-    depth_path = test_dir+"/{:06d}/depth/{:06d}.png".format(scene_id,im_id)    
+    if(dataset=="itodd"):
+        depth_path = test_dir+"/{:06d}/depth/{:06d}.tif".format(scene_id,im_id)    
+    else:
+        depth_path = test_dir+"/{:06d}/depth/{:06d}.png".format(scene_id,im_id)    
     depth_t = inout.load_depth(depth_path)/1000*depth_scale
-    depth_valid = np.logical_and(depth_t>0.2, depth_t<5)
-
+    depth_t_zero_nan = np.nan_to_num(depth_t)
+    t1=time.time()
+    inst_count_est=np.zeros((len(inst_counts)))
+    inst_count_pred = np.zeros((len(inst_counts)))
+    inst_count_good = np.zeros((len(inst_counts)))
+    
+    depth_valid = np.logical_and(depth_t>0.2, depth_t<2.2)
+    rgb_valid = np.logical_or(depth_valid,depth_t_zero_nan==0)
+    image_t = image_t.astype(np.float32)
+    image_t[np.invert(rgb_valid)]=0.1*image_t[np.invert(rgb_valid)]
+    
     points_tgt = np.zeros((depth_t.shape[0],depth_t.shape[1],6),np.float32)
     points_tgt[:,:,:3] = getXYZ(depth_t,fx=cam_K[0,0],fy=cam_K[1,1],cx=cam_K[0,2],cy=cam_K[1,2])
     points_tgt[:,:,3:] = get_normal(depth_t,fx=cam_K[0,0],fy=cam_K[1,1],cx=cam_K[0,2],cy=cam_K[1,2],refine=True)
 
-    t1=time.time()
-    inst_count_est=np.zeros((len(inst_counts)))
-    inst_count_pred = np.zeros((len(inst_counts)))
-    
     if(detect_type=='rcnn'):
         rois,obj_orders,obj_ids,scores,masks = get_rcnn_detection(image_t,model)
     elif(detect_type=='retinanet'):
@@ -371,67 +408,139 @@ for scene_id,im_id,obj_id_targets,inst_counts in target_list:
     result_roi=[]
     result_img=[]
     vis=False
-
-    for r_id,roi in enumerate(rois):
-        if(roi[0]==-1 and roi[1]==-1):
-            continue
-        obj_id = obj_ids[r_id]        
-        if not(obj_id in obj_id_targets):
-            #skip if the detected object is not in the target object
-            continue           
-        obj_gt_no = obj_id_targets.index(obj_id)
-        if(inst_count_pred[obj_gt_no]>inst_counts[obj_gt_no]*cand_factor):
-          continue
-        inst_count_pred[obj_gt_no]+=1
-
-        obj_order_id = obj_orders[r_id]
-        obj_pix2pose[obj_order_id].camK=cam_K.reshape(3,3)                
-        img_pred,mask_pred,rot_pred,tra_pred,frac_inlier,bbox_t =\
-        obj_pix2pose[obj_order_id].est_pose(image_t,roi.astype(np.int))            
-        if(frac_inlier==-1):
-            continue        
-
-        '''
-        ICP Refinement (when using depth)
-        '''
-        if(tra_pred[2]/1000<0.2):
-                continue
-            
-        if(score_type==2 and detect_type=='rcnn'):
-            mask_from_detect = masks[:,:,r_id]    
-            union_mask = np.logical_or(mask_from_detect,mask_pred)
-            union_mask = np.logical_and(union_mask,depth_valid)
-            union = np.sum(union_mask)
-            if(union<=30):
-                mask_iou=0
-                continue
-            else:
-                mask_iou = np.sum(np.logical_and(mask_from_detect,mask_pred))/union
-           
-            pts_tgt = points_tgt[union_mask]
-            tf,residual = icp_refinement(pts_tgt,obj_models[obj_order_id],rot_pred,tra_pred,cam_K,ren)
-            if(residual==-1):
-                continue
-            rot_pred_refined =tf[:3,:3]
-            tra_pred_refined =tf[:3,3]*1000 
-            if(gpu_rendering):                
-                img_ref,depth_ref = render_obj_gpu(obj_models[obj_order_id],rot_pred_refined,tra_pred_refined/1000,cam_K,ren)
-            else:
-                img_ref,depth_ref = render_obj(obj_models[obj_order_id],rot_pred_refined,tra_pred_refined/1000,cam_K,ren)
-                
-            diff_mask = np.abs(depth_ref[union_mask]-depth_t[union_mask])<0.02
-            ratio = np.sum(diff_mask)/union            
-            score =scores[r_id]*np.sum(diff_mask)#ycbv
-            rot_pred = rot_pred_refined
-            tra_pred = tra_pred_refined
-        else:
-            score = scores[r_id]    
-
-        result_score.append(score)        
-        result_objid.append(obj_id)
-        result_R.append(rot_pred)
-        result_t.append(tra_pred)        
+    roi_used=[]
     
+    
+    #print("{} is missing, no.targets:{}, no.detected:{}".format(obj_id,inst_counts[obj_gt_no], inst_count_pred[obj_gt_no]))
+    #print("try Pix2Pose for undefined regions")
+    occupancy = np.zeros((image_t.shape[0],image_t.shape[1]),bool)
+    
+    for rounds in range(2):
+        for r_id,roi in enumerate(rois):
+            if(rounds==1) and (r_id in roi_used):
+                continue                
+            if(roi[0]==-1 and roi[1]==-1):
+                continue
+            obj_id = obj_ids[r_id]        
+            #in rounds==1, for each roi, run pix2pose if object is missing            
+            if rounds==0 and not(obj_id in obj_id_targets):
+                #skip if the detected object is not in the target object
+                continue           
+            elif(rounds==0):
+                
+                mask_from_detect = masks[:,:,r_id]    
+                if not(mask_from_detect.shape[0]==image_t.shape[0] and mask_from_detect.shape[1]==image_t.shape[1]):
+                    mask_from_detect = resize(mask_from_detect.astype(np.float),(image_t.shape[0] ,image_t.shape[1] ))>0.5
+                obj_occ = occupancy==obj_id
+                mask_iou = np.sum(np.logical_and(obj_occ,mask_from_detect))/np.sum(np.logical_or(obj_occ,mask_from_detect))
+                if(mask_iou>0.7):continue               
+                    
+                obj_id_ =[obj_id]
+                obj_gt_no = obj_id_targets.index(obj_id)
+                #if(inst_count_pred[obj_gt_no]>min(inst_counts[obj_gt_no]*cand_factor,inst_counts[obj_gt_no]+5)):
+                #  continue                
+                obj_gt_no_=[obj_gt_no]
+            elif(rounds==1):       
+                obj_id_=[]
+                obj_gt_no_=[]
+                for obj_gt_no, obj_id in enumerate(obj_id_targets):
+                    if(inst_count_pred[obj_gt_no]<inst_counts[obj_gt_no]):
+                        if(len(obj_id_)==0):
+                            mask_from_detect = masks[:,:,r_id]    
+                            if not(mask_from_detect.shape[0]==image_t.shape[0] and mask_from_detect.shape[1]==image_t.shape[1]):
+                                mask_from_detect = resize(mask_from_detect.astype(np.float),(image_t.shape[0] ,image_t.shape[1] ))>0.5
+                        obj_id_.append(obj_id)
+                        obj_gt_no_.append(obj_gt_no)                        
+                print("missing obj ids=",obj_id_)
+                if(len(obj_id_)==0):break
+                obj_occ = occupancy!=0
+                mask_iou = np.sum(np.logical_and(obj_occ,mask_from_detect))/np.sum(np.logical_or(obj_occ,mask_from_detect))
+                if(mask_iou>0.7):continue       
+                    
+            
+            #take a best obj_id as a proposal            
+            
+            #if(rounds==1 and np.sum(occupancy[mask_from_detect])/np.sum(mask_from_detect)>0.5):continue               
+            
+            best_obj_id=0
+            best_gt_no=0
+            best_score=0
+            best_rot_pred=0
+            best_tra_pred=0
+            best_ratio=0
+            for obj_id, obj_gt_no in zip(obj_id_,obj_gt_no_):
+                obj_order_id =model_ids_list.index(obj_id)
+                obj_pix2pose[obj_order_id].camK=cam_K.reshape(3,3)                
+                img_pred,mask_pred,rot_pred,tra_pred,frac_inlier,bbox_t =\
+                obj_pix2pose[obj_order_id].est_pose(image_t,roi.astype(np.int))            
+                if(frac_inlier==-1):
+                    continue 
+                '''
+                ICP Refinement (when using depth)
+                '''
+                if(tra_pred[2]/1000<0.2):
+                        continue
+
+                if(score_type==2 and detect_type=='rcnn'):                    
+                    union_mask = mask_from_detect#np.logical_or(mask_from_detect,mask_pred)
+                    union_mask = np.logical_and(union_mask,depth_valid)
+                    union = np.sum(union_mask)
+                    if(union<=30):
+                        mask_iou=0
+                        continue
+                    else:
+                        mask_iou = np.sum(np.logical_and(mask_from_detect,mask_pred))/union
+
+                    pts_tgt = points_tgt[union_mask]
+                    tf,residual = icp_refinement(pts_tgt,obj_models[obj_order_id],rot_pred,tra_pred,cam_K,ren,union_mask)
+                    #mask source points aswell.
+                    if(residual==-1):
+                        continue
+                    rot_pred_refined =tf[:3,:3]
+                    tra_pred_refined =tf[:3,3]*1000 
+                    if(gpu_rendering):                
+                        img_ref,depth_ref = render_obj_gpu(obj_models[obj_order_id],rot_pred_refined,tra_pred_refined/1000,cam_K,ren)
+                    else:
+                        img_ref,depth_ref = render_obj(obj_models[obj_order_id],rot_pred_refined,tra_pred_refined/1000,cam_K,ren)
+                    
+                    inlier_mask= np.zeros((im_height,im_width),bool)
+                    diff_depth =np.abs(depth_ref[union_mask]-depth_t[union_mask]) 
+                    diff_mask =diff_depth <0.02
+                    inlier_mask[union_mask]=diff_mask
+                    norm_score=False
+                    if(norm_score):
+                        render_norm = get_normal(depth_ref,fx=cam_K[0,0],fy=cam_K[1,1],cx=cam_K[0,2],cy=cam_K[1,2],refine=True)
+                        norm_diff = np.abs(np.sum(render_norm[union_mask]*points_tgt[union_mask,3:],axis=-1))>0.7 #30 degree
+                        score =scores[r_id]*np.sum(diff_mask)*np.sum(norm_diff)#ycbv
+                    else:
+                        if(rounds==0):
+                            score =scores[r_id]*fcn(diff_depth)#np.sum(diff_mask) #scores[r_id]*np.sum(diff_mask)#ycbv
+                        else:
+                            score =0.001*fcn(diff_depth)#np.sum(diff_mask) #scores[r_id]*np.sum(diff_mask)#ycbv
+                    
+                    ratio = np.sum(diff_mask)/union                                
+                    rot_pred = rot_pred_refined
+                    tra_pred = tra_pred_refined
+                if(best_score<score):
+                    best_obj_id=obj_id
+                    best_gt_no=obj_gt_no
+                    best_score=score
+                    best_rot_pred=rot_pred
+                    best_tra_pred=tra_pred
+                    best_ratio=ratio
+            if(best_score>0):                
+                if(rounds==0 or best_ratio>0.5):
+                    inst_count_pred[best_gt_no]+=1
+                    #for the second round: test all
+                    #if(best_ratio>0.3):inst_count_good[best_gt_no]+=1                
+                    occupancy[inlier_mask]=best_obj_id
+                    roi_used.append(r_id)
+                result_score.append(best_score)        
+                result_objid.append(best_obj_id)
+                result_R.append(best_rot_pred)
+                result_t.append(best_tra_pred)        
+                
+                
     if len(result_score)>0:
         result_score = np.array(result_score)
         result_score = result_score/np.max(result_score) #normalize
@@ -443,21 +552,21 @@ for scene_id,im_id,obj_id_targets,inst_counts in target_list:
         continue    
     
     for result_id in sorted_id:
-        total_inst+=1
-        if(task_type=='2' and total_inst>n_inst): #for vivo task
-            break        
         obj_id = result_objid[result_id]
         R = result_R[result_id].flatten()
         t = (result_t[result_id]).flatten()
         score = result_score[result_id]
         obj_gt_no = obj_id_targets.index(obj_id)
         inst_count_est[obj_gt_no]+=1
-        if(task_type=='2' and inst_count_est[obj_gt_no]>inst_counts[obj_gt_no]):
+        if(task_type==2 and inst_count_est[obj_gt_no]>inst_counts[obj_gt_no]):
             #skip if the result exceeds the amount of taget instances for vivo task
             continue
         result_temp ={'scene_id':scene_id,'im_id': im_id,'obj_id':obj_id,'score':score,'R':R,'t':t,'time':time_spend }
         result_dataset.append(result_temp)
-
+        total_inst+=1
+        if(task_type==2 and total_inst>n_inst): #for vivo task
+            break        
+ 
 
 if(dataset=='tless'):
     output_path = os.path.join(output_dir,"pix2pose-iccv19_"+dataset+"-test-primesense.csv")

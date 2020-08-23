@@ -114,6 +114,9 @@ class pix2pose():
             image_no_mask_zero = np.copy(rgb[v1_2:v2_2,u1_2:u2_2])
             image_no_mask_zero = (image_no_mask_zero-[128,128,128])/128
             image_no_mask_zero[bg_full[v1_2:v2_2,u1_2:u2_2]]=0
+            if(base_image.shape[0]<5 or base_image.shape[1]<5 or image_no_mask_zero.shape[0]<5 or image_no_mask_zero.shape[1]<5 or\
+               base_image[vv1_2:vv2_2,uu1_2:uu2_2].shape[0]==0 or base_image[vv1_2:vv2_2,uu1_2:uu2_2].shape[1]==0):
+                continue            
             base_image[vv1_2:vv2_2,uu1_2:uu2_2] = image_no_mask_zero
             input_img2=resize(base_image,(128,128),order=1,mode='reflect')
             input_refined.append(input_img2)
@@ -125,6 +128,7 @@ class pix2pose():
         
         decode,prob = self.generator_train.predict( np.array(input_refined))
         max_inlier=-1
+        min_dist=9999999
         for cand_id in range(len(input_refined)):
             v1_ori,v2_ori,u1_ori,u2_ori,v1,v2,u1,u2,vv1,vv2,uu1,uu2=box_refined[cand_id]
             img_prob_ori = resize(prob[cand_id,:,:,0],(v2_ori-v1_ori,u2_ori-u1_ori),order=1,mode='constant',cval=1)
@@ -151,15 +155,37 @@ class pix2pose():
 
             rot_pred_cand,tra_pred_cand,valid_mask,n_inliers = self.pnp_ransac(rgb_aug_test2,img_prob_ori,non_gray,v1,v2,u1,u2)
             #print("n_inliers:",n_inliers,rot_pred_cand,tra_pred_cand)
-            n_inliers = n_inliers / n_non_gray
-            if(n_inliers>max_inlier):
-                valid_mask_full = np.zeros((rgb.shape[0],rgb.shape[1]),bool)
-                valid_mask_full[v1:v2,u1:u2]=valid_mask
-                rot_pred = rot_pred_cand
-                tra_pred = tra_pred_cand
-                img_pred_f = img_pred_ori
-                max_inlier = n_inliers
-                #frac of max_inlier
+            if True:
+                non_gray_full = np.zeros((rgb.shape[0],rgb.shape[1]),bool)                  
+                non_gray_full[v1:v2,u1:u2] = non_gray
+                non_gray_vu = np.where(non_gray_full)                                        
+                ct_pt = np.array([np.mean(non_gray_vu[0]),np.mean(non_gray_vu[1])]) 
+                if(tra_pred_cand[2]==0):
+                    dist=99999
+                else:
+                    proj_u = self.camK[0,0]*tra_pred_cand[0]/tra_pred_cand[2]+self.camK[0,2]
+                    proj_v = self.camK[1,1]*tra_pred_cand[1]/tra_pred_cand[2]+self.camK[1,2]
+                    dist = ((proj_v-ct_pt[0])**2 + (proj_u-ct_pt[1])**2)/(n_inliers+1E-6)
+            
+                if(dist <min_dist):                
+                    rot_pred = rot_pred_cand
+                    tra_pred = tra_pred_cand                
+                    max_inlier = n_inliers
+                    min_dist = dist
+                    #frac of max_inlier
+                    valid_mask_full = np.zeros((rgb.shape[0],rgb.shape[1]),bool)
+                    valid_mask_full[v1:v2,u1:u2]=valid_mask
+                    img_pred_f = img_pred_ori
+            else:    
+                n_inliers = n_inliers / n_non_gray
+                if(n_inliers>max_inlier):
+                    valid_mask_full = np.zeros((rgb.shape[0],rgb.shape[1]),bool)
+                    valid_mask_full[v1:v2,u1:u2]=valid_mask
+                    rot_pred = rot_pred_cand
+                    tra_pred = tra_pred_cand
+                    img_pred_f = img_pred_ori
+                    max_inlier = n_inliers
+                    #frac of max_inlier
         if(max_inlier==-1):
             #print("not valid max_inlier at the second stage")
             return img_pred,-1,-1,-1,-1,np.array([v1,v2,u1,u2],np.int)
@@ -188,7 +214,7 @@ class pix2pose():
             if(n_pts_s <6):
                 return np.eye(3),np.array([0,0,0]),valid_mask,-1
             ret, rvec, tvec,inliers = cv2.solvePnPRansac(obj_pts_s, img_pts_s, self.camK,None,\
-                                      flags=cv2.SOLVEPNP_EPNP,reprojectionError=3,iterationsCount=100)
+                                      flags=cv2.SOLVEPNP_EPNP,reprojectionError=5,iterationsCount=100)
             if(inliers is None):
                 return np.eye(3),np.array([0,0,0]),-1,-1
             else:

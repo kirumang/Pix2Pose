@@ -1,0 +1,16 @@
+{
+  "backbone":"resnet50",
+  "dataset_dir": "/home/kiru/media/hdd/bop",
+  "dataset_names": ["hb","lmo","ycbv","tless","itodd","tudl","icbin"],
+  "detection_pipeline": "rcnn",
+  "path_to_detection_pipeline": "/home/kiru/common_ws/Mask_RCNN",  
+  "path_to_output": "/home/kiru/media/hdd/bop/bop_result" ,
+  "outlier_th":[0.2,0.3,0.35],
+  "inlier_th":0.2,
+  "norm_factor_fn":"norm_factor.json",
+  "background_imgs_for_training":"/home/kiru/media/hdd/datasets/coco2017/train2017/",
+  "score_type":2,
+  "task_type":2,
+  "cand_factor":2,
+  "test_target":"test_targets_bop19"  
+}

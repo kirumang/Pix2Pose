@@ -41,38 +41,24 @@ if detect_type=='rcnn':
     from mrcnn import utils
     import mrcnn.model as modellib
     from tools.mask_rcnn_util import BopInferenceConfig
+    from skimage.transform import resize
     def get_rcnn_detection(image_t,model):
         image_t_resized, window, scale, padding, crop = utils.resize_image(
                         np.copy(image_t),
-                        min_dim=config.IMAGE_MIN_DIM,
-                        min_scale=config.IMAGE_MIN_SCALE,
-                        max_dim=config.IMAGE_MAX_DIM,
-                        mode=config.IMAGE_RESIZE_MODE)
-        if(scale!=1):
-            print("Warning.. have to adjust the scale")        
+                        min_dim=BopInferenceConfig.IMAGE_MIN_DIM,
+                        min_scale=BopInferenceConfig.IMAGE_MIN_SCALE,
+                        max_dim=BopInferenceConfig.IMAGE_MAX_DIM,
+                        mode=BopInferenceConfig.IMAGE_RESIZE_MODE)
         results = model.detect([image_t_resized], verbose=0)
         r = results[0]
         rois = r['rois']
-        if(scale!=1):
-            masks_all = r['masks'][window[0]:window[2],window[1]:window[3],:]
-            masks = np.zeros((image_t.shape[0],image_t.shape[1],masks_all.shape[2]),bool)
-            for mask_id in range(masks_all.shape[2]):
-                masks[:,:,mask_id]=resize(masks_all[:,:,mask_id].astype(np.float),(image_t.shape[0],image_t.shape[1]))>0.5
-            #resize all the masks            
-            rois=rois/scale
-            window = np.array(window)
-            window[0] = window[0]/scale
-            window[1] = window[1]/scale
-            window[2] = window[2]/scale
-            window[3] = window[3]/scale     
-        else:
-            masks = r['masks'][window[0]:window[2],window[1]:window[3],:]
-
         rois = rois - [window[0],window[1],window[0],window[1]]
+        rois = (rois/scale).astype(np.int)
         obj_orders = np.array(r['class_ids'])-1
         obj_ids = model_ids[obj_orders] 
         #now c_ids are the same annotation those of the names of ply/gt files
-        scores = np.array(r['scores'])        
+        scores = np.array(r['scores'])
+        masks = r['masks'][window[0]:window[2],window[1]:window[3],:]
         return rois,obj_orders,obj_ids,scores,masks
 
 elif detect_type=='retinanet':
@@ -223,8 +209,9 @@ for m_id,model_id in enumerate(model_ids):
     weight_dir = bop_dir+"/pix2pose_weights/{:02d}".format(model_id)
     #weight_dir = "/home/kiru/media/hdd/weights/tless/tless_{:02d}".format(model_id)
     if(backbone=='resnet50'):
-        #weight_fn = os.path.join(weight_dir,"inference_resnet_model.hdf5")
-        weight_fn = os.path.join(weight_dir,"inference_resnet50.hdf5")
+        weight_fn = os.path.join(weight_dir,"inference_resnet_model.hdf5")
+        if not(os.path.exists(weight_fn)):
+            weight_fn = os.path.join(weight_dir,"inference_resnet50.hdf5")
     else:
         weight_fn = os.path.join(weight_dir,"inference.hdf5")
     print("load pix2pose weight for obj_{} from".format(model_id),weight_fn)
@@ -320,6 +307,8 @@ for scene_id,im_id,obj_id_targets,inst_counts in target_list:
             continue        
         if(score_type==2 and detect_type=='rcnn'):       
             mask_from_detect = masks[:,:,r_id]         
+            if not(mask_from_detect.shape[0]==image_t.shape[0] and mask_from_detect.shape[1]==image_t.shape[1]):
+                mask_from_detect = resize(mask_from_detect.astype(np.float),(image_t.shape[0] ,image_t.shape[1] ))>0.5
             union = np.sum(np.logical_or(mask_from_detect,mask_pred))
             if(union<=0):
                 mask_iou=0
@@ -345,9 +334,6 @@ for scene_id,im_id,obj_id_targets,inst_counts in target_list:
         continue    
     
     for result_id in sorted_id:
-        total_inst+=1
-        if(task_type=='2' and total_inst>n_inst): #for vivo task
-            break        
         obj_id = result_objid[result_id]
         R = result_R[result_id].flatten()
         t = (result_t[result_id]).flatten()
@@ -359,6 +345,11 @@ for scene_id,im_id,obj_id_targets,inst_counts in target_list:
             continue
         result_temp ={'scene_id':scene_id,'im_id': im_id,'obj_id':obj_id,'score':score,'R':R,'t':t,'time':time_spend }
         result_dataset.append(result_temp)
+        total_inst+=1
+        if(task_type=='2' and total_inst>n_inst): #for vivo task
+            break        
+ 
+
 
 if(dataset=='tless'):
     output_path = os.path.join(output_dir,"pix2pose-iccv19_"+dataset+"-test-primesense.csv")

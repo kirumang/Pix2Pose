@@ -18,24 +18,24 @@ class BopDetectConfig(Config):
     to the toy shapes dataset.
     """
     GPU_COUNT = 1
-    IMAGES_PER_GPU = 1
+    IMAGES_PER_GPU = 1 
     RPN_ANCHOR_SCALES = (16, 32, 64, 128, 256)  # anchor side in pixels
     TRAIN_ROIS_PER_IMAGE = 32
-    STEPS_PER_EPOCH = 200000/IMAGES_PER_GPU
+    STEPS_PER_EPOCH = 50000/IMAGES_PER_GPU
     VALIDATION_STEPS = 5
     DETECTION_MIN_CONFIDENCE= 0.5
 
     def __init__(self, dataset,num_classes,im_width,im_height):
         self.NAME = dataset
-        self.NUM_CLASSES = num_classes
-        self.IMAGE_MAX_DIM =min(max(im_width,im_height),1024)
-        self.IMAGE_MIN_DIM =max(min(im_width,im_height),480)
+        self.NUM_CLASSES = num_classes               
+        self.IMAGE_MAX_DIM =max(im_width,im_height)#min(max(im_width,im_height),1024)#due to itodd
+        self.IMAGE_MIN_DIM =min(im_width,im_height)#max(min(im_width,im_height),480)
         if(self.IMAGE_MAX_DIM%64>0):
             frac = int(self.IMAGE_MAX_DIM/64)+1
             self.IMAGE_MAX_DIM = frac*64 #set image to the nearest size that            
-        self.IMAGE_SHAPE = np.array([self.IMAGE_MAX_DIM,self.IMAGE_MAX_DIM ])
-        super().__init__()
-    
+        self.IMAGE_SHAPE = np.array([self.IMAGE_MAX_DIM,self.IMAGE_MAX_DIM ])                
+        super().__init__()        
+        
 class BopInferenceConfig(Config):
     """Configuration for training on the toy shapes dataset.
     Derives from the base Config class and overrides values specific
@@ -47,9 +47,12 @@ class BopInferenceConfig(Config):
     TRAIN_ROIS_PER_IMAGE = 1    
     VALIDATION_STEPS = 5
     DETECTION_MIN_CONFIDENCE=0.001
-    DETECTION_MAX_INSTANCES=100
-    DETECTION_NMS_THRESHOLD=0.7
-
+    DETECTION_MAX_INSTANCES=200
+    DETECTION_NMS_THRESHOLD=0.7 #0.7
+    
+    POST_NMS_ROIS_INFERENCE = 2000
+    RPN_NMS_THRESHOLD = 0.9
+    
     def __init__(self, dataset,num_classes,im_width,im_height):
         self.NAME = dataset
         self.NUM_CLASSES = num_classes
@@ -77,9 +80,9 @@ class BopDataset(utils.Dataset):
         files = sorted(os.listdir(self.train_dir))
         n_img=0
         for i,file in enumerate(files):
-            if file.endswith(".png"):
+            if file.endswith(".png") or file.endswith(".jpg"):
                 img_path = os.path.join(self.train_dir,file)
-                mask_fn = file.replace(".png",".npy")
+                mask_fn = file[:-4]+".npy" #.replace(".png",".npy")
                 mask_path = os.path.join(self.train_dir+"/mask/",mask_fn)
                 self.add_image(self.dataset,image_id=n_img,path=img_path)
                 self.mask_fns.append(mask_path)
