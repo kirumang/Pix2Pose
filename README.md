@@ -3,7 +3,7 @@ Original implementation of the paper, Kiru Park, Timothy Patten and Markus Vincz
 
 # Notice
 Codes that have been used to produce results for the BOP challenge 2020 are updated.
-Thanks to PBR training images provided by the challenge, the performance of LM-O, HB, and ITODD are significantly improved. 
+Thanks to PBR training images provided by the challenge, the results of LM-O, HB, and ITODD are significantly improved. 
 
 The modifications from the original implementation of the paper are follows,
 
