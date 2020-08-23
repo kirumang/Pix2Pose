@@ -301,7 +301,6 @@ for m_id,model_id in enumerate(model_ids):
     model_param = model_params['{}'.format(model_id)]
     obj_param=bop_io.get_model_params(model_param)
     weight_dir = bop_dir+"/pix2pose_weights/{:02d}".format(model_id)
-    #weight_dir = "/home/kiru/media/hdd/weights/tless/tless_{:02d}".format(model_id)
     if(backbone=='resnet50'):
         weight_fn = os.path.join(weight_dir,"inference_resnet_model.hdf5")
         if not (os.path.exists(weight_fn)):
@@ -367,8 +366,7 @@ for scene_id,im_id,obj_id_targets,inst_counts in target_list:
     if(img_type=='gray'):
         rgb_path = test_dir+"/{:06d}/".format(scene_id)+img_type+\
                         "/{:06d}.tif".format(im_id)
-        image_gray = inout.load_im(rgb_path)
-        #copy gray values to three channels    
+        image_gray = inout.load_im(rgb_path)        
         image_t = np.zeros((image_gray.shape[0],image_gray.shape[1],3),dtype=np.uint8)
         image_t[:,:,:]= np.expand_dims(image_gray,axis=2)
     else:
@@ -411,8 +409,6 @@ for scene_id,im_id,obj_id_targets,inst_counts in target_list:
     roi_used=[]
     
     
-    #print("{} is missing, no.targets:{}, no.detected:{}".format(obj_id,inst_counts[obj_gt_no], inst_count_pred[obj_gt_no]))
-    #print("try Pix2Pose for undefined regions")
     occupancy = np.zeros((image_t.shape[0],image_t.shape[1]),bool)
     
     for rounds in range(2):
@@ -426,8 +422,7 @@ for scene_id,im_id,obj_id_targets,inst_counts in target_list:
             if rounds==0 and not(obj_id in obj_id_targets):
                 #skip if the detected object is not in the target object
                 continue           
-            elif(rounds==0):
-                
+            elif(rounds==0):                
                 mask_from_detect = masks[:,:,r_id]    
                 if not(mask_from_detect.shape[0]==image_t.shape[0] and mask_from_detect.shape[1]==image_t.shape[1]):
                     mask_from_detect = resize(mask_from_detect.astype(np.float),(image_t.shape[0] ,image_t.shape[1] ))>0.5
@@ -456,11 +451,6 @@ for scene_id,im_id,obj_id_targets,inst_counts in target_list:
                 obj_occ = occupancy!=0
                 mask_iou = np.sum(np.logical_and(obj_occ,mask_from_detect))/np.sum(np.logical_or(obj_occ,mask_from_detect))
                 if(mask_iou>0.7):continue       
-                    
-            
-            #take a best obj_id as a proposal            
-            
-            #if(rounds==1 and np.sum(occupancy[mask_from_detect])/np.sum(mask_from_detect)>0.5):continue               
             
             best_obj_id=0
             best_gt_no=0

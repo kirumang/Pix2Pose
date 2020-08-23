@@ -207,7 +207,6 @@ for m_id,model_id in enumerate(model_ids):
     model_param = model_params['{}'.format(model_id)]
     obj_param=bop_io.get_model_params(model_param)
     weight_dir = bop_dir+"/pix2pose_weights/{:02d}".format(model_id)
-    #weight_dir = "/home/kiru/media/hdd/weights/tless/tless_{:02d}".format(model_id)
     if(backbone=='resnet50'):
         weight_fn = os.path.join(weight_dir,"inference_resnet_model.hdf5")
         if not(os.path.exists(weight_fn)):
