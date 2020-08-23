@@ -2,19 +2,41 @@
 Original implementation of the paper, Kiru Park, Timothy Patten and Markus Vincze, "Pix2Pose: Pix2Pose: Pixel-Wise Coordinate Regression of Objects for 6D Pose Estimation", ICCV 2019, https://arxiv.org/abs/1908.07433
 
 # Notice
-The Resnet-50 backbone, which can be initialized with weights for ImageNet, is supported instead of the original encoder network, which performs better (in terms of accuracy).
+Codes that have been used to produce results for the BOP challenge 2020 are updated.
+Thanks to PBR training images provided by the challenge, the performance of LM-O, HB, and ITODD are significantly improved. 
 
-For the YCB-Video dataset, the improvements are (in terms of the BOP score):
-- RGB only (0.284 -> **0.428**, +51%): the best result among RGB only methods in the last BOP challenge results.
-- RGB with ICP on depth (0.668 -> **0.742**, +11%): The best result again. 
+The modifications from the original implementation of the paper are follows,
 
-You can download the weights for the YCB-Video dataset using Resnet-50 [here](https://drive.google.com/open?id=1au-jcTNQVZNV8aEpuTsMb68IZoVruEN8)
+1) Replaced the encoder part with the first three blocks of Resnet-50 with pre-trained weights using ImageNet.
 
-To use the resnet-50 backbone, add
-```
-"backbone":"resnet50"
-```
-in the config json file. (e.g., cfg/cfg_bop_2019.json or ros_config.json). Please make sure the repository is up-to-date.
+2) Increased a threshold for inlier pixels during PnP-Ransac operation (3 -> 5).
+
+3) Detection results from Mask-RCNN are reused if predictions for each detection are not successful. In this case, Pix2Pose is performed for other objects that do not have good results yet.
+
+6) A minor bug that causes bad detection results for the T-Less dataset is fixed. (different image resolutions were used during training and inference)
+
+7) Increased the number of RPN proposals and NMS thresholds in Mask-RCNN (1000/0.7 to 2000/0.9), which produces more detection proposals
+
+*(w/ICP)*
+
+1) Parameters for the ICP refinement are optimized.
+
+2) Adjusted inlier and outlier thresholds for Pix2Pose (inlier: 0.15 -> 0.2, outlier: [0.15,0.25,0.35] -> [0.2,0.3,0.35]).
+   
+3) A score of each hypothesis is computed by a new form, max(0,0.2-[depth_difference per pixel])/0.2, instead of counting the number of pixels that have less than 0.2 depth differences.
+
+
+The official results are:
+
+| BOP Score'20                           | AVG   | LM-O  | T-Less | TUD-L | IC-BIN | ITODD | HB    | YCB-V |
+|----------------------------------------|-------|-------|--------|-------|--------|-------|-------|-------|
+| Pix2Pose(RGB + Depth ICP)              | 0.591 | 0.588 | 0.512  | 0.820 | 0.390  | 0.351 | 0.695 | 0.780 |
+| Pix2Pose(RGB only)                     | 0.342 | 0.363 | 0.344  | 0.420 | 0.226  | 0.134 | 0.446 | 0.457 |
+| Vidal-Sensors18 (the winner in 2018,2019)  | 0.569 | 0.582 | 0.538  | 0.876 | 0.393  | 0.435 | 0.706 | 0.450 |
+| CosyPose-ICP (ECCV'20, the winner in 2020) | 0.698 | 0.714 | 0.701  | 0.939 | 0.647  | 0.313 | 0.712 | 0.861 |
+
+
+PBR Training images are used for LM-O, IC-BIN, ITODD, HB without additional images, and real training images are used for T-Less, TUD-L, YCB-V. To reproduce the same results, cfg/cfg_bop_2020.json or cfg/cfg_bop_2020_rgb.json (for RGB only results) has to be used with our up-to-date code.
 
 
 ### Requirements:
@@ -176,7 +198,7 @@ keras_retinanet/bin/convert_model.py /path/to/training/model.h5 /path/to/save/in
 
 ---
 
-### Download pre-trained weights 
+### Download trained weights 
 * Please refer to the paper for other details regarding the training
     
   * T-Less: 2D Retinanet weights + Pix2Pose weights [link](https://drive.google.com/open?id=1XjGpniXgoxzGWxq4sul1FvszUoLROkke) 
@@ -185,25 +207,35 @@ keras_retinanet/bin/convert_model.py /path/to/training/model.h5 /path/to/save/in
     * To test using all test images, download and copy [all_target_tless.json](https://drive.google.com/open?id=1O6dKfWoe0ERlXm6Gg_3XvdxWo4a2BWVY) file into the dataset folder (together with the test_targets_bop19.json file) 
 ---
 
-### Download: trained weights for the BOP challenge 2019
-For the BOP challenge, we used Mask-RCNN to measure a score values for the current estimations using ovelapped ratios between masks from Mask-RCNN and the Pix2Pose estimation. All the hyperparameters, including augmentation, are set to the same for all datasets during the training and test. (33K iterations using 50 images in a mini batch)
+### Download: trained weights for the BOP challenge 2020
+These trained weights here are used to submit the results of core datasets in [the BOP Challenge 2020](https://bop.felk.cvut.cz/challenges). 
 
-These trained weights here are used to submit the results of core datasets in [the BOP Challenge 2019](https://bop.felk.cvut.cz/challenges).
-Due to the large number of objects for training, the number of iterations are reduced (200 epoch --> 100 epoch). 
+First of all, norm_factors have to be downloded and placed in the following path:
+```[path/to/bop_dataset]/[dataset_name]/models_xyz/norm_factor.json```
+
+Download link: [Norm_factor files for all 7 dataset](https://drive.google.com/file/d/1Epilq368c50H4OJLiy0hsZwypCyUbN5y/view?usp=sharing)
+
 
 Download the zip files and extract them to the bop dataset folder
 e.g., for hb, the extracted files should placed in
 - [path to bop dataset]/tless/weight_detection/tless20190927T0827/mask_rcnn_tless_0005.h5
 - [path to bop dataset]/tless/pix2pose_weights/[obj_no]
 
-* T-Less: [2D Mask R-CNN Detection + Pix2Pose weights](https://drive.google.com/open?id=1-0fsXuwTYSOlCaPeePgDY-IAuMxRjcOG)
-* YCBV (paper backbone): [2D Mask R-CNN Detection + Pix2Pose weights](https://drive.google.com/open?id=1FW6wxkPw64j_NsBnc5g4HkwPlfRFefbN)
-* YCBV (Resnet50 backbone, better performance): [2D Mask R-CNN Detection + Pix2Pose weights](https://drive.google.com/open?id=1ZXO1wpLXz5jdz2NVnENDIRM3W_Q3Y5s4)
+* LM-O: [2D Mask R-CNN Detection + Pix2Pose weights](https://drive.google.com/file/d/1Xo_vKbjCW4eHtmbMYoCQYyRqFAc_RHsL/view?usp=sharing)
 
-* ICBIN: [2D Mask R-CNN Detection + Pix2Pose weights](https://drive.google.com/open?id=1c7KvBs0xcPcQgvmRxwyYbdBzh9a-Vt30)
-* TUDL: [2D Mask R-CNN Detection + Pix2Pose weights](https://drive.google.com/open?id=1N4Yetze3iSyVmVOTwGfVI6CHgZX_RFA3)
-* HB: [2D Mask R-CNN Detection + Pix2Pose weights](https://drive.google.com/open?id=1PpReSRHMQ4z0-BUpffrBF61d-PSAH3w6)
-* RU-APC: [2D Mask R-CNN Detection + Pix2Pose weights](https://drive.google.com/open?id=1PvSrV2Gj463QWQxYsbTjcD0OKovha8oZ)
+* T-Less: [2D Mask R-CNN Detection + Pix2Pose weights](https://drive.google.com/file/d/1_uf40NIsmlje6bZLpRHR3Qk7reCk0PUx/view?usp=sharing)
+
+* TUDL: [2D Mask R-CNN Detection + Pix2Pose weights](https://drive.google.com/file/d/1EOthiwIZGH9G0bL4NbRhhimODiaFWPdc/view?usp=sharing)
+
+* ICBIN: [2D Mask R-CNN Detection + Pix2Pose weights](https://drive.google.com/file/d/14ylgR0SlHXXkfi8mbm68snOH-DKvLkMV/view?usp=sharing)
+
+* ITODD: [2D Mask R-CNN Detection + Pix2Pose weights](https://drive.google.com/file/d/1W7cDJZX3QMaD3dIQ_RnDNsOb7AytBbPr/view?usp=sharing)
+
+* HB: [2D Mask R-CNN Detection + Pix2Pose weights](https://drive.google.com/file/d/1sOEpkV202YoXiB82SMYSPVKwbwUp03RI/view?usp=sharing)
+
+* YCBV : [2D Mask R-CNN Detection + Pix2Pose weights](https://drive.google.com/file/d/1au-jcTNQVZNV8aEpuTsMb68IZoVruEN8/view?usp=sharing)
+
+
 
 ### Contributors:
 * Kiru Park - email: park@acin.tuwien.ac.at / kirumang@gmail.com
