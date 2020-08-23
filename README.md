@@ -32,8 +32,8 @@ The official results are:
 |----------------------------------------|-------|-------|--------|-------|--------|-------|-------|-------|
 | Pix2Pose(RGB + Depth ICP)              | 0.591 | 0.588 | 0.512  | 0.820 | 0.390  | 0.351 | 0.695 | 0.780 |
 | Pix2Pose(RGB only)                     | 0.342 | 0.363 | 0.344  | 0.420 | 0.226  | 0.134 | 0.446 | 0.457 |
-| Vidal-Sensors18 (the winner in 2018,2019)  | 0.569 | 0.582 | 0.538  | 0.876 | 0.393  | 0.435 | 0.706 | 0.450 |
-| CosyPose-ICP (ECCV'20, the winner in 2020) | 0.698 | 0.714 | 0.701  | 0.939 | 0.647  | 0.313 | 0.712 | 0.861 |
+| Vidal-Sensors18 (the best in '18,'19)  | 0.569 | 0.582 | 0.538  | 0.876 | 0.393  | 0.435 | 0.706 | 0.450 |
+| CosyPose-ICP (ECCV'20, the best in '20) | 0.698 | 0.714 | 0.701  | 0.939 | 0.647  | 0.313 | 0.712 | 0.861 |
 
 
 PBR Training images are used for LM-O, IC-BIN, ITODD, HB without additional images, and real training images are used for T-Less, TUD-L, YCB-V. To reproduce the same results, cfg/cfg_bop_2020.json or cfg/cfg_bop_2020_rgb.json (for RGB only results) has to be used with our up-to-date code.
@@ -217,7 +217,7 @@ Download link: [Norm_factor files for all 7 dataset](https://drive.google.com/fi
 
 
 Download the zip files and extract them to the bop dataset folder
-e.g., for hb, the extracted files should placed in
+e.g., for TLess, the extracted files should be placed in
 - [path to bop dataset]/tless/weight_detection/tless20190927T0827/mask_rcnn_tless_0005.h5
 - [path to bop dataset]/tless/pix2pose_weights/[obj_no]
 
