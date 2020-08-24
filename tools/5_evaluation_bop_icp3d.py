@@ -82,29 +82,9 @@ def icp_refinement(pts_tgt,obj_model,rot_pred,tra_pred,cam_K,ren,union_mask):
     #adjust the initial translation using centroids of visible points
     centroid_src = np.array([np.mean(points_src[:,0]),np.mean(points_src[:,1]),np.mean(points_src[:,2])])    
     trans_adjust = centroid_tgt - centroid_src
-    
-    new_z = tra_pred[2]+trans_adjust[2]*1000
-    new_x = tra_pred[0]*(new_z/tra_pred[2])
-    new_y = tra_pred[1]*(new_z/tra_pred[2])
-    new_trans = np.array([new_x,new_y,new_z])
-    trans_adjust = (new_trans - tra_pred)/1000
-    
     tra_pred = tra_pred +trans_adjust*1000
-    
-    #x_new= x1*(z_new/z1)
     points_src[:,:3]+=trans_adjust
     
-    #const int iterations,
-    #const float tolerence = 0.05f,
-    #const float rejectionScale = 2.5f,
-    #const int numLevels = 6,
-    #const int sampleType = ICP::ICP_SAMPLING_TYPE_UNIFORM,
-    #const int numMaxCorr = 1 
-
-    #icp_fnc = cv2.ppf_match_3d_ICP(100,tolerence=0.05,numLevels=4) #1cm #last thing to try
-    
-    #100,0.05,2.5,4
-    #100,0.005,2.5,2
     icp_fnc = cv2.ppf_match_3d_ICP(100,tolerence=0.005,rejectionScale=2.5,numLevels=2) #1cm #last thing to try
     retval, residual, pose=icp_fnc.registerModelToScene(points_src.reshape(-1,6), pts_tgt.reshape(-1,6))    
     
