@@ -1,7 +1,7 @@
 tensorflow-gpu==1.9.0
 keras==2.2.1
 opencv-python==3.4.2.17
-opencv-contrib-python==3.4.2.17
+opencv-contrib-python==4.2.0.32
 transforms3d==0.3.1
 matplotlib==2.2.4
 imgaug==0.2.7
